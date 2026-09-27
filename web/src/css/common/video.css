@@ -1,0 +1,344 @@
+.video-thumbnail {
+  position: relative;
+  display: block;
+  width: min(20rem, 100%);
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--black);
+  aspect-ratio: 16 / 9;
+}
+
+.video-thumbnail > video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.video-surface {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.video-thumbnail .video-badge:has(button) {
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.video-badge > button {
+  --control-size: 1rem;
+  min-height: var(--control-size);
+  color: inherit;
+}
+
+.video-thumbnail > .player-volume {
+  --control-size: 1.5rem;
+  min-height: var(--control-size);
+  position: absolute;
+  inset-inline-end: 0.875rem;
+  inset-block-end: 0.375rem;
+  z-index: 2;
+  color: var(--white);
+  background: color-mix(in srgb, var(--black) 65%, transparent);
+}
+
+.video-thumbnail > .player-volume > .icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.video-thumbnail > .player-level {
+  inset-inline-end: 0.375rem;
+  inset-block-end: 2.75rem;
+  max-height: calc(100% - 3rem);
+}
+
+.video-thumbnail:is([data-spoiler], [data-failed]) > :is(.player-volume, .player-level) {
+  visibility: hidden;
+}
+
+.video-badge {
+  position: absolute;
+  inset-inline-start: 0.375rem;
+  inset-block-end: 0.375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.375rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--black) 65%, transparent);
+  backdrop-filter: blur(0.5rem);
+  color: var(--white);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.video-badge .icon,
+.video-badge > button[data-circle] > .icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  background: color-mix(in srgb, var(--black) 45%, transparent);
+  backdrop-filter: blur(0.375rem);
+  color: var(--white);
+  pointer-events: none;
+}
+
+.video-thumbnail[data-active] > .video-overlay {
+  display: grid;
+}
+
+.video-play {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--black) 55%, transparent);
+}
+
+.video-play > .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.video-thumbnail[data-loading] .video-play,
+.video-thumbnail[data-spoiler] > :is(.video-badge, .video-overlay) {
+  visibility: hidden;
+}
+
+.video-thumbnail[data-spoiler] > video {
+  filter: blur(0.75rem);
+}
+
+.video-overlay > .progress,
+.video-view > .progress {
+  --focus: var(--white);
+  --bar: color-mix(in srgb, var(--white) 25%, transparent);
+  --stroke: 0.2rem;
+
+  --progress-size: 2rem;
+  --progress-animation: loading 800ms linear infinite;
+}
+
+dialog[data-fullscreen]:has(.video-view) {
+  border: 0;
+  background: color-mix(in srgb, var(--black) 90%, transparent);
+  backdrop-filter: blur(1rem);
+}
+
+dialog[data-popover][data-fullscreen] > .layer-content:has(> .video-view) {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.video-view {
+  --video-seek: min(32rem, calc(100% - 8rem));
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: color-mix(in srgb, var(--black) 90%, transparent);
+  color: var(--white);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.video-view > .player[data-video] {
+  overflow: hidden;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  color: var(--white);
+  border-radius: 0;
+}
+
+.player[data-video] > video {
+  transform: translate(var(--video-x, 0px), var(--video-y, 0px)) scale(var(--video-scale, 1));
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  touch-action: none;
+}
+
+.player[data-video] > .player-control {
+  --control-size: 2.5rem;
+  grid-area: auto;
+  position: absolute;
+  inset-block-end: max(2rem, env(safe-area-inset-bottom));
+  inset-inline-start: calc((100% - var(--video-seek)) / 2 - 2.75rem);
+  min-height: 2.5rem;
+  translate: none;
+  z-index: 2;
+  background: color-mix(in srgb, var(--black) 60%, transparent);
+  color: var(--white);
+}
+
+.video-view > button:is(.image-view-back, .image-view-full) {
+  color: var(--white);
+  background: color-mix(in srgb, var(--black) 60%, transparent);
+}
+
+.video-view:not([data-controls]):not(:has([data-feedback])) > button,
+.video-view:not([data-controls]):not(:has([data-feedback])) .player > :is(button, label) {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.player[data-video] .range-fill {
+  background: var(--thumb);
+}
+
+.player[data-video] .range-track {
+  --range-track: color-mix(in srgb, var(--thumb) 25%, transparent);
+}
+
+.player[data-video] > .player-seek {
+  position: absolute;
+  inset-block-end: max(0.75rem, env(safe-area-inset-bottom));
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  width: var(--video-seek);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--black) 60%, transparent);
+  backdrop-filter: blur(0.5rem);
+}
+
+.player[data-video] > .player-volume {
+  grid-area: auto;
+  justify-self: auto;
+  position: absolute;
+  inset-inline-end: calc((100% - var(--video-seek)) / 2 - 2.75rem);
+  inset-block-end: max(2rem, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--black) 60%, transparent);
+  color: var(--white);
+}
+
+.player[data-video] > .player-level {
+  inset-inline-end: calc((100% - var(--video-seek)) / 2 - 2.75rem);
+  inset-block-end: max(5rem, calc(env(safe-area-inset-bottom) + 3rem));
+  background: color-mix(in srgb, var(--black) 75%, transparent);
+  backdrop-filter: blur(0.5rem);
+}
+
+.video-view > .progress {
+  z-index: 3;
+}
+
+.player[data-video] > .player-error {
+  z-index: 3;
+  padding: 0.5rem;
+  background: var(--background);
+}
+
+:is(.small, .wearable) .player[data-video] > .player-seek {
+  width: calc(100% - 7rem);
+  inset-inline-start: 3.5rem;
+  translate: none;
+}
+
+:is(.small, .wearable) .video-view {
+  --video-seek: calc(100% - 7rem);
+}
+
+.wearable .player[data-video] > .player-seek {
+  inset-block-end: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video-overlay > .progress,
+  .video-view > .progress {
+    --progress-animation: none;
+  }
+}
+
+.video-overlay > :is(.video-play, .progress) {
+  grid-area: 1 / 1;
+  place-self: center;
+}
+
+.video-play {
+  flex: none;
+  min-width: 3rem;
+  min-height: 3rem;
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+.video-thumbnail[data-playing]:not([data-loading]) > .video-overlay {
+  display: none;
+}
+
+.video-overlay > .progress,
+.video-view > .progress {
+  padding: 0;
+}
+
+.video-view > .progress[data-progress="circular"] {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+.video-thumbnail .video-overlay > .video-play {
+  display: grid;
+  place-items: center;
+}
+
+.video-thumbnail .video-play > .icon {
+  margin: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.video-error {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.375rem;
+  background: var(--background);
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.video-error > [data-icon] {
+  color: var(--error);
+}
+
+.video-error .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.video-error[hidden],
+.video-thumbnail[data-failed] > :is(video, .video-badge, .video-overlay) {
+  display: none;
+}

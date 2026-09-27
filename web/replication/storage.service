@@ -1,0 +1,9 @@
+[Unit]
+Description=oanismajor storage replica
+RequiresMountsFor=__SOURCE__
+ConditionPathIsMountPoint=__SOURCE__
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rsync -a --delete-delay __SOURCE__/ __TARGET__/
+TimeoutStartSec=120

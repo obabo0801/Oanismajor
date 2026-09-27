@@ -1,0 +1,28 @@
+[Unit]
+StartLimitIntervalSec=0
+Description=oanismajor WAS %i
+After=network-online.target db.service
+Wants=network-online.target
+PartOf=was.service
+__MOUNT__
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=__ROOT__
+Environment=NODE_ENV=production
+Environment=HOST=__ADDRESS__
+Environment=PROXY_NETWORK=__NETWORK__
+Environment=DATA_DIRECTORY=__ROOT__/storage
+Environment=CLOUDSDK_CONFIG=__ROOT__/.config/gcloud
+Environment=PORT=%i
+Environment=PATH=/opt/node24/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=__NODE__ __ROOT__/was/server.js
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=15
+UMask=0027
+
+[Install]
+WantedBy=was.service

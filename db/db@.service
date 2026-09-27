@@ -1,0 +1,23 @@
+[Unit]
+StartLimitIntervalSec=0
+Description=oanismajor DB %i
+ConditionPathExists=!/var/lib/oanismajor/fenced
+After=network-online.target postgresql@__VERSION__-%i.service
+Wants=network-online.target
+PartOf=db.service
+Conflicts=postgresql@__VERSION__-%i.service
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/pg_ctlcluster --skip-systemctl-redirect __VERSION__ %i start
+ExecStop=/usr/bin/pg_ctlcluster --skip-systemctl-redirect -m fast __VERSION__ %i stop
+ExecReload=/usr/bin/pg_ctlcluster --skip-systemctl-redirect __VERSION__ %i reload
+PIDFile=/run/postgresql/__VERSION__-%i.pid
+TimeoutStartSec=120
+TimeoutStopSec=120
+KillMode=mixed
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=db.service

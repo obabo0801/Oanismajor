@@ -1,0 +1,20 @@
+{
+  "distribution": "Ubuntu",
+  "root": "/srv/oanismajor",
+  "node": "/opt/node24/bin/node",
+  "was": [
+    3001
+  ],
+  "web": [
+    8081
+  ],
+  "db": [
+    {
+      "name": "main",
+      "version": 18,
+      "port": 5432,
+      "role": "primary"
+    }
+  ],
+  "https": true
+}

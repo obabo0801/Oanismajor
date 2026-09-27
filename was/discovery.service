@@ -1,0 +1,18 @@
+[Unit]
+StartLimitIntervalSec=0
+Description=oanismajor server discovery
+After=network-online.target db.service was.service web.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=__ROOT__
+ExecStart=__NODE__ __ROOT__/run.js watch
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=15
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

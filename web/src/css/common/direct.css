@@ -1,0 +1,190 @@
+.chatting.direct {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.chatting.direct .chatting-text {
+  font-size: 1.25rem;
+}
+
+.wearable .chatting.direct .chatting-text {
+  font-size: 1.25rem;
+}
+
+.messenger-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex: none;
+  justify-content: end;
+  margin-block-start: auto;
+  padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.messenger-footer > button {
+  border: 0;
+}
+
+.room-owner {
+  margin-inline-start: auto;
+  color: var(--focus);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.chatting.direct[data-viewport] {
+  height: var(--chatting-height);
+  min-height: 0;
+}
+
+.direct .chatting-list > button {
+  flex: none;
+}
+
+.input > .whisper-target {
+  grid-row: 1;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: 0.5rem;
+  color: var(--focus);
+  font-size: 1rem;
+  text-align: start;
+}
+
+[data-whisper] .input-compose > [data-control] {
+  grid-row: 2;
+}
+
+[data-whisper] .input.input-compose > .input-actions {
+  grid-row: 3;
+}
+
+.whisper-target[hidden] {
+  display: none;
+}
+
+.whisper-target > .icon {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.whisper-target > span:not(.icon) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  white-space: normal;
+}
+
+.whisper-label {
+  color: var(--focus);
+  font-size: 0.75rem;
+}
+
+.whisper-head {
+  grid-area: name;
+  display: flex;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.whisper-head > .chatting-name {
+  min-width: 0;
+}
+
+:is(.small, .wearable) .whisper-head {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chatting[data-chatting] .chatting-message[data-private="whisper"] {
+  background: color-mix(in srgb, var(--focus) 24%, var(--background));
+}
+
+.chatting.inbox-list {
+  display: block;
+  min-height: 0;
+  max-height: none;
+  border: 0;
+}
+
+.chatting.inbox-list[data-chatting] .message-preview {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "avatar name . badge"
+    "avatar time . badge"
+    "text text text badge";
+  align-items: center;
+  justify-content: start;
+  direction: ltr;
+  text-align: start;
+
+  background-color: var(--canvas);
+}
+
+.chatting.inbox-list[data-chatting] .message-preview > .chatting-profile {
+  display: contents;
+}
+
+.chatting.inbox-list[data-chatting] .message-preview .chatting-avatar {
+  grid-area: avatar;
+  justify-self: start;
+  background: var(--background);
+}
+
+.chatting.inbox-list[data-chatting] .message-preview .chatting-name {
+  grid-area: name;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.chatting.inbox-list[data-chatting] .message-preview > .chatting-time {
+  grid-area: time;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: start;
+}
+
+.inbox-list .chatting-time > [data-icon] {
+  display: inline-flex;
+  flex: none;
+}
+
+.inbox-list .chatting-time > [data-icon] > .icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  margin: 0;
+}
+
+.inbox-list .message-preview > .chatting-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--mute);
+  font-size: 1rem;
+}
+
+.message-preview > .toolbar-badge {
+  position: static;
+  grid-area: badge;
+  text-align: center;
+}
+
+.chatting-message[data-private="whisper"] {
+  cursor: pointer;
+}

@@ -1,0 +1,19 @@
+[Unit]
+Description=oanismajor shared storage gateway
+__DEPENDENCY__
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/sbin/ip route replace local 127.0.0.2/32 dev lo src 127.0.0.2 table local
+ExecStartPre=/usr/sbin/nginx -t -c /etc/oanismajor/storage.conf
+ExecStart=/usr/sbin/nginx -c /etc/oanismajor/storage.conf -g "daemon off;"
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGQUIT
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

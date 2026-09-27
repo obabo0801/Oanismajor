@@ -1,6 +1,0 @@
-/* 인증 상태를 다시 확인하는 동안 복원된 이전 화면을 노출하지 않습니다. */
-:root[data-checking] body,
-:root[data-checking] body * {
-  visibility: hidden !important;
-  pointer-events: none;
-}

@@ -16,26 +16,35 @@ const request = [
 const backend = ["\\#config/*", "\\#build/*", "\\#db*", "\\#service/*", ...request, "node:*"];
 
 export default [
-  { ignores: ["dist/**", "data/**", "node/**", ".codex*/**"] },
+  {
+    ignores: ["web/dist/**", "storage/**", "replica/**", "node/**", ".codex*/**"]
+  },
   {
     files: [
       "*.js",
-      "config/**/*.js",
+      "was/server.js",
+      "web/vite.config.js",
+      "was/config/**/*.js",
       "db/**/*.js",
-      "service/**/*.js",
-      "build/**/*.js",
-      "middleware/**/*.js",
-      "router/**/*.js"
+      "was/service/**/*.js",
+      "web/build/**/*.js",
+      "was/middleware/**/*.js",
+      "was/router/**/*.js"
     ],
     languageOptions: { globals: globals.node }
   },
-  { files: ["src/js/**/*.js"], languageOptions: { globals: globals.browser } },
   {
-    files: ["server.js", "middleware/**/*.js", "router/**/*.js"],
-    rules: { "no-restricted-imports": ["error", { patterns: [...browser, "\\#build/*"] }] }
+    files: ["web/src/js/**/*.js"],
+    languageOptions: { globals: globals.browser }
   },
   {
-    files: ["config/**/*.js", "db/**/*.js"],
+    files: ["was/server.js", "was/middleware/**/*.js", "was/router/**/*.js"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [...browser, "\\#build/*"] }]
+    }
+  },
+  {
+    files: ["was/config/**/*.js", "db/**/*.js"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -44,13 +53,13 @@ export default [
     }
   },
   {
-    files: ["service/**/*.js"],
+    files: ["was/service/**/*.js"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [...browser, ...request, "\\#build/*"] }]
     }
   },
   {
-    files: ["build/**/*.js"],
+    files: ["web/build/**/*.js"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -59,19 +68,26 @@ export default [
     }
   },
   {
-    files: ["src/js/**/*.js"],
+    files: ["web/src/js/**/*.js"],
     rules: { "no-restricted-imports": ["error", { patterns: backend }] }
   },
   {
-    files: ["src/js/common/**/*.js"],
-    rules: { "no-restricted-imports": ["error", { patterns: [...backend, "\\#src/*", "\\#ui/*"] }] }
+    files: ["web/src/js/common/**/*.js"],
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [...backend, "\\#src/*", "\\#ui/*"] }]
+    }
   },
   {
-    files: ["shared/**/*.js"],
+    files: ["lib/**/*.js"],
     languageOptions: { globals: { URL: "readonly" } },
-    rules: { "no-restricted-imports": ["error", { patterns: [...backend, ...browser] }] }
+    rules: {
+      "no-restricted-imports": ["error", { patterns: [...backend, ...browser] }]
+    }
   },
-  { files: ["public/service-work.js"], languageOptions: { globals: globals.serviceworker } },
+  {
+    files: ["web/public/worker.js"],
+    languageOptions: { globals: globals.serviceworker }
+  },
   {
     files: ["**/*.js"],
     plugins: { "@stylistic": stylistic },
@@ -93,7 +109,11 @@ export default [
         { blankLine: "always", prev: "expression", next: ["const", "let"] },
         { blankLine: "always", prev: "if", next: ["if", "expression"] },
         { blankLine: "always", prev: "multiline-expression", next: "*" },
-        { blankLine: "always", prev: "multiline-const", next: "multiline-const" }
+        {
+          blankLine: "always",
+          prev: "multiline-const",
+          next: "multiline-const"
+        }
       ]
     }
   }

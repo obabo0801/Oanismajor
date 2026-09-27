@@ -1,0 +1,11 @@
+[Unit]
+Description=oanismajor storage replica timer
+
+[Timer]
+OnBootSec=30s
+OnUnitInactiveSec=30s
+AccuracySec=1s
+Unit=replication.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,449 @@
+.window:not(.small) dialog[data-popover]:not([data-fullscreen]):has(.profile > .profile-head),
+.mobile:not(.small) dialog[data-popover]:not([data-fullscreen]):has(.profile > .profile-head) {
+  width: fit-content;
+  min-width: min(32rem, calc(100vw - 2rem));
+  max-width: min(48rem, calc(100vw - 2rem));
+}
+
+.profile {
+  display: grid;
+  gap: 16px;
+
+  width: 100%;
+  min-width: 0;
+}
+
+.profile-devices[hidden] {
+  display: none;
+}
+
+.profile-device-name {
+  -webkit-user-select: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  min-width: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.profile-device-name[data-active] {
+  color: var(--focus);
+}
+
+:is(.small, .wearable) .profile-device-name {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.profile-head {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+
+  text-align: center;
+}
+
+.profile-avatar {
+  position: relative;
+
+  display: grid;
+  justify-self: center;
+
+  width: 128px;
+  aspect-ratio: 1;
+  margin-block-end: 8px;
+}
+
+.profile-avatar > .avatar {
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+}
+
+.profile-avatar > button.avatar {
+  padding: 0;
+  border: 0;
+}
+
+.profile-avatar > .avatar[data-icon~="user"] > svg.icon {
+  width: 8rem;
+  height: 8rem;
+
+  transform: translateY(10px);
+}
+
+.profile-avatar > button.avatar[data-icon~="user"] > svg.icon {
+  width: 9rem;
+  height: 9rem;
+
+  transform: translateY(12px);
+}
+
+.profile-edit {
+  position: absolute;
+  z-index: 2;
+  inset-inline-end: 8px;
+  inset-block-end: 8px;
+
+  display: grid;
+  place-items: center;
+
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--canvas);
+  border-radius: 999px;
+
+  background: var(--background);
+  color: var(--text);
+  pointer-events: none;
+
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.profile-edit > .icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.profile-avatar[data-loading] > .avatar {
+  opacity: 0.5;
+}
+
+.profile-status {
+  position: absolute;
+  z-index: 1;
+  inset-inline-end: 8px;
+  inset-block-end: 8px;
+
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+
+  background: var(--neutral);
+
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.profile-status[data-state="online"] {
+  background: var(--success);
+
+  animation: profile-ping 1.6s ease-out 240ms infinite;
+}
+
+.profile-status[data-state="away"] {
+  background: var(--warning);
+}
+
+.profile-name {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.5rem;
+}
+
+.profile-verified {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  margin-inline-start: 0.3rem;
+  border-radius: 50%;
+  background: var(--focus);
+  color: var(--canvas);
+  vertical-align: middle;
+}
+
+.profile-verified > .icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.profile-head > .profile-id,
+.profile-time {
+  color: var(--mute);
+}
+
+.profile-time[data-blocked],
+.profile-error {
+  color: var(--error);
+}
+
+.profile .group.profile-block > .group-item > .label .label-value {
+  color: var(--text);
+}
+
+.profile-time:empty,
+.profile-head > .profile-id:empty {
+  display: none;
+}
+
+.profile-protect {
+  color: var(--mute);
+}
+
+.profile-protect[data-protected="true"] {
+  color: var(--text);
+}
+
+.profile-section,
+.profile-details,
+.history-record,
+.history-handling {
+  display: grid;
+  gap: 16px;
+}
+
+.history-day {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.history-day > .profile-section > .group,
+.history-date {
+  animation: history-show 180ms ease-out;
+}
+
+.history-record {
+  padding: 16px;
+}
+
+.history-record-head {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.history-conversation,
+.history-handling {
+  min-width: 0;
+}
+
+.history-record :is(h3, h4, p) {
+  margin: 0;
+}
+
+.history-record h3 {
+  font-size: 1rem;
+}
+
+.history-record-time {
+  color: var(--mute);
+  font-size: 0.8125rem;
+}
+
+.history-record button {
+  border: 0;
+}
+
+.history-record-head[data-kind="chatting"] > h3 {
+  color: var(--focus);
+}
+
+.history-record-head:is([data-kind="report"], [data-kind="mute"]) > h3 {
+  color: var(--warning);
+}
+
+.history-record-head:is([data-kind="kick"], [data-kind="block"]) > h3 {
+  color: var(--error);
+}
+
+.history-record-head:is([data-kind="unkick"], [data-kind="unblock"]) > h3 {
+  color: var(--success);
+}
+
+.history-record h4 {
+  font-size: 0.875rem;
+}
+
+.chatting.history-conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  max-height: none;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.chatting.history-conversation .chatting-message[data-target] {
+  background: color-mix(in srgb, var(--warning) 16%, var(--surface));
+}
+
+.history-media {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.history-media :is(button, img, audio) {
+  width: 100%;
+  min-width: 0;
+}
+
+.history-media img {
+  max-height: 16rem;
+  object-fit: contain;
+}
+
+.history-media > button {
+  height: auto;
+  padding: 8px;
+}
+
+.history-handling {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+:is(.small, .wearable) .history-record {
+  padding: 12px;
+}
+
+.history-status > .progress {
+  --progress-animation: loading 800ms linear infinite;
+}
+
+.history-edge {
+  height: 1px;
+  pointer-events: none;
+}
+
+.profile-section:not(:empty) + .history-status {
+  min-height: 0;
+  padding-block: 8px;
+}
+
+@keyframes history-show {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.history-date {
+  margin: 0;
+  color: var(--mute);
+  font-size: 1rem;
+  text-align: center;
+}
+
+.history-status {
+  display: grid;
+  place-items: center;
+  min-height: min(30dvh, 240px);
+  margin: 0;
+  padding-block: 32px;
+  color: var(--mute);
+  text-align: center;
+}
+
+.history-status.profile-error {
+  color: var(--error);
+}
+
+.history-tools > button {
+  color: var(--mute);
+}
+
+.history-tools > button[data-selected] {
+  color: var(--text);
+}
+
+.profile .line {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.profile button.label-value {
+  display: block;
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  line-height: inherit;
+}
+
+p.profile-id {
+  margin: 0;
+
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+:is(.small, .wearable) .profile-head {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:is(.small, .wearable) .profile-avatar {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:is(.small, .wearable) .profile-avatar > .avatar[data-icon~="user"] > svg.icon {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  transform: translateY(8.333%);
+}
+
+.chatting-message:is([data-blocked], [data-direct-blocked]) {
+  opacity: 0.5;
+}
+
+@keyframes profile-ping {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 45%, transparent);
+  }
+
+  75%,
+  100% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-day > .profile-section > .group,
+  .history-date,
+  .history-status > .progress {
+    animation: none;
+    --progress-animation: none;
+  }
+
+  .profile-edit,
+  .profile-status,
+  .chatting-message:is([data-blocked], [data-direct-blocked]) {
+    transition: none;
+  }
+
+  .profile-status[data-state="online"] {
+    animation: none;
+  }
+}
+:is(.report, .profile-records) .label-content > .label-value {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}

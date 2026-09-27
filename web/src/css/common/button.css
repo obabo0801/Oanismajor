@@ -1,0 +1,182 @@
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 60px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+  color: inherit;
+  white-space: normal;
+
+  cursor: pointer;
+
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    opacity 100ms ease;
+}
+
+:where(button[data-scale]) {
+  position: relative;
+  isolation: isolate;
+}
+
+button[data-scale]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  border-radius: inherit;
+  background-image: var(--overlay);
+
+  opacity: 0;
+  pointer-events: none;
+
+  scale: 1;
+
+  transition:
+    opacity 100ms ease,
+    scale 160ms ease;
+}
+
+button[data-scale] > .icon {
+  transform-origin: center;
+  scale: 1;
+  transition: scale 160ms ease;
+}
+
+button[data-circle] {
+  width: var(--control-size);
+  height: var(--control-size);
+  padding: 0;
+  border-radius: 999px;
+}
+
+.preview-control[data-circle] {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: -0.625rem;
+  inset-inline-end: -0.625rem;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--background);
+  color: var(--text);
+}
+
+.preview-control[data-icon="minus"],
+.preview-control.chatting-upload[data-failed] {
+  color: var(--error);
+}
+
+.preview-control > .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+span.preview-control {
+  pointer-events: none;
+}
+
+button[data-danger] {
+  background: var(--error);
+  color: var(--thumb);
+}
+
+button[data-success] {
+  background-color: var(--success);
+  color: var(--thumb);
+}
+
+button[data-neutral] {
+  background: var(--neutral);
+  color: var(--text);
+}
+
+button[data-confirm] {
+  background: var(--info);
+  color: var(--thumb);
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+button:focus-visible {
+  outline: 0;
+  color: var(--thumb);
+}
+
+button:focus-visible:not([data-scale]) {
+  background-image: var(--overlay);
+}
+
+button[data-scale]:focus-visible::after {
+  opacity: 1;
+}
+
+button:enabled:active:not([data-scale]) {
+  background-image: var(--overlay);
+}
+
+button[data-scale]:enabled:active::after {
+  opacity: 1;
+  scale: 0.96;
+}
+
+button[data-scale]:enabled:active > .icon {
+  scale: 0.96;
+}
+
+button[data-opacity]:enabled:active {
+  opacity: 0.6;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:enabled:hover:not([data-scale]) {
+    background-image: var(--overlay);
+  }
+
+  button[data-scale]:enabled:hover:not(:active)::after {
+    opacity: 1;
+    scale: 1.06;
+  }
+
+  button[data-scale]:enabled:hover:not(:active) > .icon {
+    scale: 1.06;
+  }
+
+  button[data-opacity]:enabled:hover {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  button[data-scale]::after,
+  button[data-scale] > .icon {
+    transition: none;
+  }
+
+  button[data-scale]:enabled:is(:hover, :active)::after,
+  button[data-scale]:enabled:is(:hover, :active) > .icon {
+    scale: 1;
+  }
+}

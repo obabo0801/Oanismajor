@@ -1,5 +1,7 @@
 .codex*
-data/
+storage/
+replica/
 dist/
 node_modules/
 .env
+local.json

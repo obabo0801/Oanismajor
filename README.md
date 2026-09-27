@@ -1,407 +1,718 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/node.js-24%2B-brightgreen" alt="Node.js 24 이상">
+  <img src="https://img.shields.io/badge/node.js-24%2B-brightgreen" alt="Node.js 24+">
   <img src="https://img.shields.io/badge/version-v1.0.0-blue" alt="Version 1.0.0">
 </p>
 
-<h1 align="center">
-🐶 Jjing Web
-</h1>
+<h1 align="center">🐶 oanismajor</h1>
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/c4f849a2-839f-4ec1-9f3c-2b837e8518f7" width="16%" alt="찡">
+  <img src="https://github.com/user-attachments/assets/c4f849a2-839f-4ec1-9f3c-2b837e8518f7" width="16%" alt="oanismajor">
 </p>
 
 <p align="center">
-  <strong>Node.js Jjing Web</strong>
-</p>
-
-<p align="center">
-  <a href="https://github.com/obabo0801/Jjing-Web/archive/refs/heads/main.zip">
+  <a href="https://github.com/obabo0801/Oanismajor/archive/refs/heads/main.zip">
     <img src="https://img.shields.io/badge/Download-ZIP-blue?style=for-the-badge" alt="Download ZIP">
   </a>
 </p>
 
-```bash
-git@github.com:obabo0801/Jjing-Web.git
-```
-
 ---
 
 <details>
-<summary>❗ 업데이트 내역</summary>
+<summary><strong>한국어</strong></summary>
 
-## ❗ 버전 1.0.0
+### 📌 소개
 
-- 공개 채팅, 메신저, 문의하기 추가
-- 이미지, 음성, 이모티콘 첨부 지원
-- 링크 미리보기 추가
-- 로그인, 프로필 편집, 계정 삭제 기능 추가
-- 사용자 신고, 제재, 관리자 권한 관리 지원
-- 알림 전송, 등록된 기기 확인 기능 추가
-- DB, 업로드, TTS, STT 관리 화면 추가
-- 데스크탑, 모바일, 웨어러블 화면 대응
-- 테마, 다국어, 소리, 진동 설정 지원
-- PWA 설치, 오프라인 화면 지원
-- 공용 화면 구성 요소 추가
-- 빌드 파일 해시 처리 적용
+채팅, 음성, 알림, 사용자 관리를 제공하는<br>
+Node.js 웹 프로젝트입니다.<br>
+데스크탑, 모바일, 웨어러블을 지원합니다.
+
+<details>
+<summary>✨ 기능</summary>
+
+| 구분 | 기능 |
+| :---: | :---: |
+| 화면 | 테마, 다국어 |
+| 사용자 | 로그인, 프로필, 접속 상태 |
+| 채팅 | 채팅방, 메신저, 첨부파일 |
+| 문의 | 접수, 담당자 배정, 내역 관리 |
+| 알림 | 화면 알림, Web Push |
+| 음성 | TTS, STT |
+| PWA | 앱 설치, 오프라인 안내 |
+
+첨부파일은 파일당 최대 500MB를 지원합니다.<br>
+오디오와 동영상을 재생하고 커버, 제목을 편집합니다.<br>
+호환되지 않는 미디어는 서버에서 변환합니다.<br>
+WAS 설치에는 FFmpeg가 포함됩니다.
+
+`/`에서 방을 선택합니다. 방 주소는 `/rooms/:id`이며,<br>
+이름을 바꿔도 유지됩니다.
+
+| 방 상태 | 접근 | 작성 |
+| :---: | :---: | :---: |
+| 공개 | 누구나 | 가능 |
+| 읽기 전용 | 누구나 | 불가 |
+| 보관 | 관리자 | 불가 |
+
+관리자는 방을 생성하거나 수정할 수 있습니다.<br>
+방 삭제는 보관으로 처리하며 메시지를 유지합니다.
+
+</details>
+
+<details>
+<summary>🚀 실행</summary>
+
+소스를 내려받고 프로젝트 폴더에서 실행합니다.
+
+```bash
+git clone https://github.com/obabo0801/Oanismajor.git
+cd Oanismajor
+```
+
+| 환경 | 실행 |
+| :---: | :---: |
+| Windows 11 | `.\oanismajor.bat` |
+| Ubuntu | `sudo bash oanismajor.sh` |
+
+1. 처음에는 WAS, WEB, DB를 설치합니다.
+2. Tailscale에 로그인합니다.
+3. 새 서버 또는 기존 서버 연결을 선택합니다.
+4. 메뉴의 **시작**에서 실행할 서비스를 선택합니다.
+
+WSL 설치로 재부팅했다면 다시 실행합니다.<br>
+이후 실행부터는 관리 메뉴가 열립니다.<br>
+메뉴 언어는 **설정**에서 변경합니다.
+
+**개별 실행**
+
+**Windows**
+
+| 작업 | 명령 |
+| :---: | :---: |
+| 시작 | `.\start.bat` |
+| 정지 | `.\stop.bat` |
+| 재시작 | `.\restart.bat` |
+| 상태 | `.\status.bat` |
+| 로그 | `.\logs.bat` |
+| 업데이트 | `.\update.bat` |
+
+**Ubuntu**
+
+| 작업 | 명령 |
+| :---: | :---: |
+| 시작 | `sudo bash start.sh` |
+| 정지 | `sudo bash stop.sh` |
+| 재시작 | `sudo bash restart.sh` |
+| 상태 | `sudo bash status.sh` |
+| 로그 | `sudo bash logs.sh` |
+| 업데이트 | `sudo bash update.sh` |
+
+끝에 `was`, `web`, `db`를 붙이면 해당 서비스를<br>
+선택합니다.<br>
+예: `.\stop.bat was`, `sudo bash stop.sh was`
+
+Node.js가 있으면 npm 명령도 사용할 수 있습니다.
+
+```bash
+npm start
+npm stop was
+npm run restart web
+npm run status
+npm run logs
+```
+
+로그 화면은 Ctrl+C로 닫습니다. 서버는 계속 실행됩니다.
+
+**업데이트**
+
+`git pull`후 업데이트를 실행합니다.<br>
+실행 중인 WAS, WEB만 갱신합니다.<br>
+정지된 서버는 켜지 않으며 DB는 재시작하지 않습니다.<br>
+포트나 서버 구성 변경은 설치 절차로 적용합니다.
+
+**제거**
+
+`uninstall.bat`또는 `sudo bash uninstall.sh`를<br>
+실행합니다.<br>
+DB, 업로드, 설정, 인증서는 유지됩니다.
+
+</details>
+
+<details>
+<summary>🛠 패키지</summary>
+
+- Node.js 24 이상, npm
+- ES Modules, Express 5
+- Vite 8
+- PostgreSQL 18
+- ESLint 10, Prettier 3
+
+DB와 프로젝트 루트의 `.env`를 준비합니다.<br>
+기본 DB 이름은 `oanismajor`, 계정은 `root`입니다.
+
+```bash
+npm ci
+npm run dev
+```
+
+`http://localhost:5173`에 접속합니다. 종료는<br>
+Ctrl+C입니다.
+
+| 명령 | 용도 |
+| :---: | :---: |
+| `npm run build` | `web/dist`빌드 |
+| `npm run preview` | 빌드 미리보기 |
+| `npm run format` | 코드 정리 |
+
+</details>
+
+<details>
+<summary>🔐 설정</summary>
+
+프로젝트 루트의 `.env`를 사용합니다.<br>
+설치와 업데이트 시 운영 폴더에 반영됩니다.<br>
+새 기본 서버 설치 시 DB 비밀번호와 쿠키 키를<br>
+생성합니다.
+
+```env
+DATABASE_URL=postgresql://root:YOUR_PASSWORD@127.0.0.1:5432/oanismajor
+COOKIE_SECRET=YOUR_RANDOM_SECRET
+HTTPS_HOST=example.com
+HTTPS_EMAIL=admin@example.com
+```
+
+`.env`, 인증 파일, 비밀 키는 Git에 올리지 않습니다.<br>
+운영 환경에서는 `NODE_ENV=development`를 사용하지<br>
+않습니다.
+
+**Google**
+
+```env
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost:5173/api/04f8996d/google/callback
+```
+
+실제 접속 주소의 콜백 URL을 Google에도 동일하게<br>
+등록합니다.<br>
+여러 주소는 쉼표로 구분합니다.
+
+**SOOP**
+
+```env
+SOOP_CLIENT_KEY=
+SOOP_SECRET_KEY=
+SOOP_REDIRECT_URI=https://example.com/api/04f8996d/soop/callback
+SOOP_CONSENT=false
+SOOP_ENABLED=false
+```
+
+실제 콜백 URL을 SOOP Developers에도 등록합니다.
+
+- `user_stationinfo`, `validate_live_status`승인 후
+  `SOOP_CONSENT=true`
+- SOOP의 `state`반환 지원 확인 후 `SOOP_ENABLED=true`
+
+승인 전에는 해당 API를 호출하지 않습니다.<br>
+콜백의 `state`검증은 유지합니다.<br>
+Consent 신청에는 홈페이지, 개인정보처리방침, 기능<br>
+설명이 필요합니다.<br>
+재로그인과 계정 연결은 기존 프로필을 유지합니다.
+
+**음성**
+
+```env
+TTS=json
+STT=json
+GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+```
+
+`json`은 서비스 계정 파일, `login`은 Cloud 기본<br>
+인증을 사용합니다.<br>
+빈 값이면 TTS는 일반 Google TTS, STT는 Cloud<br>
+비활성화입니다.
+
+Cloud 프로젝트에서 사용할 음성 API를 활성화하고<br>
+인증 계정의 권한과 결제 설정을 확인합니다.
+
+WAS 설치에는 gcloud가 포함됩니다.<br>
+`login`방식은 Ubuntu에서 인증합니다.
+
+```bash
+export CLOUDSDK_CONFIG=/srv/oanismajor/.config/gcloud
+gcloud auth application-default login
+```
+
+**Web Push**
+
+`npx web-push generate-vapid-keys`로 키를 생성합니다.
+
+```env
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:admin@example.com
+```
+
+**GIPHY**
+
+`VITE_GIPHY_API_KEY`에 공개 검색 키를 설정한 뒤<br>
+빌드합니다.
+
+**연결 상태**
+
+`status`에서 HTTPS, TTS, STT, GOOGLE, SOOP, VAPID,<br>
+GIPHY를 확인합니다.<br>
+관리자의 **연결 상태**에서는 인증서 발급일과 만료일도<br>
+확인합니다.<br>
+실제 로그인과 푸시 수신은 사용하는 기기에서<br>
+확인합니다.
+
+</details>
+
+<details>
+<summary>🌐 증설</summary>
+
+**추가 서버**
+
+1. 기본 서버를 켜고 같은 Tailscale 계정에 연결합니다.
+2. 같은 소스 버전, 기본 서버의 `.env`, `web/dist`를<br>
+  준비합니다.
+3. 설치에서 기존 서버 연결을 선택합니다.
+4. 기본 서버의 Tailscale IP를 입력합니다.
+
+`local.json`, `node_modules`, `storage`는 복사하지<br>
+않습니다.<br>
+DB 복제에는 `REPLICATION_URL`, 음성 WAS에는 Cloud<br>
+인증이 필요합니다.<br>
+서버 간 쿠키 키와 로그인 설정, 푸시 키는 동일하게<br>
+사용합니다.
+
+**분산과 전환**
+
+- WEB, WAS는 정상 응답 후 등록됩니다.
+- 지원하는 조회는 최신 복제 DB에 분산합니다.
+- 복제 지연이나 오류가 있으면 기본 DB에서 조회합니다.
+- 저장과 권한 확인은 기본 DB를 사용합니다.
+- 복제 DB가 연결되면 동기 복제, 끊기면 단독 저장으로<br>
+  전환합니다.
+- 자동 인계 설정 시 재부팅 전에 역할을 넘깁니다.
+- 기본 서버가 돌아오면 동기화 후 주 역할을 복구합니다.
+- Router 전환 중 잠시 지연될 수 있습니다.
+- 갑작스러운 전원 차단이나 통신 단절만으로 DB를<br>
+  승격하지 않습니다.
+
+**기본 포트**
+
+| 역할 | 포트 |
+| :---: | :---: |
+| HTTPS | 80, 443 |
+| WEB | 8081 |
+| WAS | 3001 |
+| DB | 5432 |
+| 파일 공유 | 2049 |
+
+외부 HTTPS 연결과 서버 간 Tailscale 연결에 필요한<br>
+포트를 허용합니다.
+
+**백업**
+
+- DB: `pg_dump`
+- 업로드: `storage/`
+- 설정: 운영 `.env`, Cloud 인증 파일
+- 인증서: `/var/lib/oanismajor/acme`
+
+인증서 폴더는 유지합니다.<br>
+`evidence`복구에는 `storage/evidence.key`가<br>
+필요합니다.
+
+</details>
+
+<details>
+<summary>📁 구조</summary>
+
+| 경로 | 용도 |
+| :---: | :---: |
+| `was/` | 서버 |
+| `web/` | 화면 |
+| `db/` | 데이터베이스 |
+| `lib/` | 공용 코드 |
+| `storage/` | 저장 파일 |
+| `web/dist/` | 빌드 결과 |
+| `servers.json` | 기본 설정 |
+| `local.json` | 개별 설정 |
+| `run.js` | 실행 도구 |
+
+`local.json`이 기본 설정보다 우선합니다.<br>
+운영 소스는 `/srv/oanismajor`, Nginx 설정은<br>
+`/etc/oanismajor`입니다.
+
+Windows에서 운영 파일을 확인하는 경로입니다.
+
+```text
+\\wsl.localhost\Ubuntu\srv\oanismajor
+```
+
+</details>
+
+</details>
+
+<details>
+<summary><strong>English</strong></summary>
+
+### 📌 About
+
+A Node.js web project for chat, voice, notifications,<br>
+and user management.<br>
+Supports desktop, mobile, and wearable screens.
+
+<details>
+<summary>✨ Features</summary>
+
+| Area | Features |
+| :---: | :---: |
+| Interface | Themes, languages |
+| Users | Sign-in, profiles, presence |
+| Chat | Rooms, messenger<br>attachments |
+| Support | Requests, assignments, history |
+| Notifications | In-app alerts, Web Push |
+| Voice | TTS, STT |
+| PWA | App installation, offline notice |
+
+Attachments support up to 500MB per file.<br>
+Play audio and video. Edit covers and titles.<br>
+Incompatible media is converted on the server.<br>
+WAS installation includes FFmpeg.
+
+Choose a room at `/`. Room URLs use `/rooms/:id`<br>
+and stay unchanged when a room is renamed.
+
+| Room state | Access | Posting |
+| :---: | :---: | :---: |
+| Public | Everyone | Allowed |
+| Read-only | Everyone | Blocked |
+| Archived | Admins | Blocked |
+
+Admins can create and edit rooms.<br>
+Deleting a room archives it and keeps its messages.
+
+</details>
+
+<details>
+<summary>🚀 Run</summary>
+
+Download the source and open the project folder.
+
+```bash
+git clone https://github.com/obabo0801/Oanismajor.git
+cd Oanismajor
+```
+
+| Platform | Command |
+| :---: | :---: |
+| Windows 11 | `.\oanismajor.bat` |
+| Ubuntu | `sudo bash oanismajor.sh` |
+
+1. The first run installs WAS, WEB, and DB.
+2. Sign in to Tailscale.
+3. Create a new server or connect to an existing<br>
+  server.
+4. Select services from **Start** in the menu.
+
+If WSL installation requires a reboot, run the command<br>
+again afterward.<br>
+Later runs open the management menu.<br>
+Change the menu language in **Settings**.
+
+**Individual commands**
+
+**Windows**
+
+| Action | Command |
+| :---: | :---: |
+| Start | `.\start.bat` |
+| Stop | `.\stop.bat` |
+| Restart | `.\restart.bat` |
+| Status | `.\status.bat` |
+| Logs | `.\logs.bat` |
+| Update | `.\update.bat` |
+
+**Ubuntu**
+
+| Action | Command |
+| :---: | :---: |
+| Start | `sudo bash start.sh` |
+| Stop | `sudo bash stop.sh` |
+| Restart | `sudo bash restart.sh` |
+| Status | `sudo bash status.sh` |
+| Logs | `sudo bash logs.sh` |
+| Update | `sudo bash update.sh` |
+
+Append `was`, `web`, or `db` to select a service.<br>
+Examples: `.\stop.bat was`, `sudo bash stop.sh was`
+
+With Node.js installed, npm commands are also<br>
+available.
+
+```bash
+npm start
+npm stop was
+npm run restart web
+npm run status
+npm run logs
+```
+
+Press Ctrl+C to close the log view. Services keep<br>
+running.
+
+**Updates**
+
+Run `git pull`, then the update command.<br>
+Only running WAS and WEB services are refreshed.<br>
+Stopped services stay stopped. DB is not restarted.<br>
+Use the installation flow to change ports or server<br>
+roles.
+
+**Uninstall**
+
+Run `uninstall.bat` or `sudo bash uninstall.sh`.<br>
+The database, uploads, settings, and certificates are<br>
+kept.
+
+</details>
+
+<details>
+<summary>🛠 Packages</summary>
+
+- Node.js 24+, npm
+- ES Modules, Express 5
+- Vite 8
+- PostgreSQL 18
+- ESLint 10, Prettier 3
+
+Prepare a database and a root `.env` file.<br>
+The default database is `oanismajor`, with the `root`<br>
+database user.
+
+```bash
+npm ci
+npm run dev
+```
+
+Open `http://localhost:5173`. Press Ctrl+C to stop.
+
+| Command | Purpose |
+| :---: | :---: |
+| `npm run build` | Build to `web/dist` |
+| `npm run preview` | Preview the build |
+| `npm run format` | Format code |
+
+</details>
+
+<details>
+<summary>🔐 Configuration</summary>
+
+Use `.env` in the project root.<br>
+Installation and updates copy it to the runtime<br>
+folder.<br>
+A new primary server generates a database password and<br>
+cookie key.
+
+```env
+DATABASE_URL=postgresql://root:YOUR_PASSWORD@127.0.0.1:5432/oanismajor
+COOKIE_SECRET=YOUR_RANDOM_SECRET
+HTTPS_HOST=example.com
+HTTPS_EMAIL=admin@example.com
+```
+
+Keep `.env`, credentials, and private keys out of<br>
+Git.<br>
+Do not use `NODE_ENV=development` in production.
+
+**Google**
+
+```env
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost:5173/api/04f8996d/google/callback
+```
+
+Register the same callback URL for your deployment in<br>
+Google.<br>
+Separate multiple URLs with commas.
+
+**SOOP**
+
+```env
+SOOP_CLIENT_KEY=
+SOOP_SECRET_KEY=
+SOOP_REDIRECT_URI=https://example.com/api/04f8996d/soop/callback
+SOOP_CONSENT=false
+SOOP_ENABLED=false
+```
+
+Register the actual callback URL in SOOP Developers.
+
+- Obtain `user_stationinfo` and `validate_live_status`<br>
+  approval,<br>
+  then set `SOOP_CONSENT=true`.
+- Confirm SOOP returns `state`, then set<br>
+  `SOOP_ENABLED=true`.
+
+These APIs are not called before approval.<br>
+Keep callback `state` validation enabled.<br>
+Consent applications need a homepage, privacy policy,<br>
+and feature description.<br>
+Later sign-ins and account linking preserve the<br>
+existing profile.
+
+**Voice**
+
+```env
+TTS=json
+STT=json
+GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+```
+
+Use `json` for a service account file or `login` for<br>
+Cloud default credentials.<br>
+An empty value uses standard Google TTS and disables<br>
+Cloud STT.
+
+Enable the required speech APIs in the Cloud project.<br>
+Check account permissions and billing settings.
+
+WAS installation includes gcloud.<br>
+For `login`, authenticate in Ubuntu:
+
+```bash
+export CLOUDSDK_CONFIG=/srv/oanismajor/.config/gcloud
+gcloud auth application-default login
+```
+
+**Web Push**
+
+Generate keys:<br>
+`npx web-push generate-vapid-keys`
+
+```env
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:admin@example.com
+```
+
+**GIPHY**
+
+Set the public search key in `VITE_GIPHY_API_KEY`,<br>
+then rebuild.
+
+**Connection status**
+
+Check HTTPS, TTS, STT, GOOGLE, SOOP, VAPID, and GIPHY<br>
+with `status`.<br>
+The admin connection view also shows certificate issue<br>
+and expiry dates.<br>
+Verify actual sign-in and push delivery on the target<br>
+device.
+
+</details>
+
+<details>
+<summary>🌐 Scaling</summary>
+
+**Additional servers**
+
+1. Keep the primary server on and use the same<br>
+  Tailscale account.
+2. Prepare the same source version, `web/dist`,<br>
+  and the primary server's `.env`.
+3. Choose the existing server option during<br>
+  installation.
+4. Enter the primary server's Tailscale IP.
+
+Do not copy `local.json`, `node_modules`, or<br>
+`storage`.<br>
+DB replicas need `REPLICATION_URL`. Voice WAS nodes<br>
+need Cloud credentials.<br>
+Use the same cookie key, login settings, and push keys<br>
+across servers.
+
+**Distribution and handover**
+
+- WEB and WAS register after responding successfully.
+- Supported reads are distributed to up-to-date<br>
+  replicas.
+- Delayed or unavailable replicas fall back to the<br>
+  primary for reads.
+- Writes and permission checks use the primary.
+- Connected replicas use synchronous replication.
+  A lost replica connection switches back to<br>
+  standalone writes.
+- Configured automatic handover transfers roles before<br>
+  a restart.
+- The original primary regains its role after<br>
+  returning and synchronizing.
+- Router switching may cause a brief delay.
+- Sudden power loss or lost connectivity alone does<br>
+  not promote a DB.
+
+**Default ports**
+
+| Role | Port |
+| :---: | :---: |
+| HTTPS | 80, 443 |
+| WEB | 8081 |
+| WAS | 3001 |
+| DB | 5432 |
+| File sharing | 2049 |
+
+Allow the required ports for public HTTPS and<br>
+inter-server Tailscale traffic.
+
+**Backups**
+
+- Database: `pg_dump`
+- Uploads: `storage/`
+- Settings: runtime `.env`, Cloud credentials
+- Certificates: `/var/lib/oanismajor/acme`
+
+Preserve the certificate directory.<br>
+Restoring `evidence` requires `storage/evidence.key`.
+
+</details>
+
+<details>
+<summary>📁 Structure</summary>
+
+| Path | Purpose |
+| :---: | :---: |
+| `was/` | Backend |
+| `web/` | Frontend |
+| `db/` | Database |
+| `lib/` | Shared code |
+| `storage/` | Stored files |
+| `web/dist/` | Build output |
+| `servers.json` | Defaults |
+| `local.json` | Local overrides |
+| `run.js` | Service runner |
+
+`local.json` overrides the defaults.<br>
+Runtime source: `/srv/oanismajor`. Nginx<br>
+configuration: `/etc/oanismajor`.
+
+Access runtime files from Windows at:
+
+```text
+\\wsl.localhost\Ubuntu\srv\oanismajor
+```
+
+</details>
 
 </details>
 
 ---
 
-## 📌 소개
+### 📬 Contact
 
-Node.js 웹 프로젝트입니다.
-
-채팅, 음성, 알림, 사용자 관리 기능을 제공하며<br>
-데스크탑, 모바일, 웨어러블 화면에 대응합니다.
-
----
-
-## ✨ 기능
-
-### 🌐 화면
-
-- 테마, 언어 자동 적용
-- 기기별 화면 구성
-- 이미지 확대, 이동, 보기
-- 공용 UI
-- 공용 오디오 플레이어
-- 공용 파일 선택
-
-### 👤 사용자
-
-- 로그인, 프로필 설정
-- 프로필 이미지 편집
-- 휴대폰을 통한 이미지 등록
-- 접속 상태, 현재 접속자 확인
-- 브라우저 저장 데이터 관리
-- 계정 삭제 요청, 7일 이내 취소
-
-### 💬 채팅
-
-- 공개 채팅, 메신저
-- 이전 대화 조회
-- 최신 메시지 이동
-- 이미지, GIF, 음성, 이모티콘 첨부
-- 링크 미리보기
-- 첨부 목록 조회
-- 음성 입력
-- 메시지 읽어주기
-- 사용자 차단, 신고
-
-### 📬 문의하기
-
-- 첫 메시지 전송 시 문의 접수
-- 관리자 확인 시 담당자 배정
-- 문의 내역 조회
-- 문의 종료
-
-### 🛡 관리
-
-- 사용자 검색
-- 관리자 권한 관리
-- 채팅 제한, 접속 차단, 강제 퇴장
-- 신고 내역, 제재 이력 확인
-- 서비스 점검
-- API 요청 제한
-- 오류, 오프라인, 점검 안내 화면
-- DB, 로그, 업로드, TTS, STT 조회
-
-### 🔔 알림
-
-- 제목, 내용, 이미지 지정
-- 등록된 기기에서 전송 대상 선택
-- 사용자별 알림 설정
-- 기기 정보 확인
-- 화면 내 알림
-- 지원 브라우저의 Web Push
-- 알림 선택 시 관련 화면 이동
-- 유효하지 않은 구독 정리
-
-### 📱 PWA
-
-- 지원 브라우저에서 앱 설치
-- 오프라인 안내 화면
-- 백그라운드 동기화
-- 캐시 관리
-
-### 🔊 오디오
-
-- 효과음, 배경음, 알림음 재생
-- 종류별 음량 설정
-- 음소거
-- 지원 기기의 진동 피드백
-- 오디오 탐색, 재생 시간 표시
-
-### 🗣 TTS
-
-- Google TTS
-- Google Cloud Text-to-Speech
-- Cloud 요청 실패 시 일반 TTS로 전환
-- 언어, 음성, 속도, 음높이 설정
-- 생성 음원 재사용
-
-### 🎙 STT
-
-- Web Speech API
-- Google Cloud Speech-to-Text
-- 지원 환경에서 실시간 인식 결과 표시
-- 녹음 음성 인식
-- 마이크 선택
-- 입력 상태 표시
-
-### 🛠 파일 처리
-
-- 빌드 파일명 해시 처리
-- `data-*` 속성 해시 처리
-- 페이지 경로 자동 연결
-- 개발 서버의 API 요청 전달
-- 업로드 이미지 크기 조절
-- 이미지 형식 변환
-- 파일 처리 크기 제한
-
----
-
-## 🛠 개발 환경
-
-- Node.js 24 이상
-- npm
-- ES Modules
-- Express 5
-- Vite 8
-- SQLite3 6
-- Google Cloud Speech
-- Text-to-Speech
-- Web Push
-- ESLint 10
-- Prettier 3
-- Sharp
-- QRCode
-
----
-
-## 🚀 설치
-
-```bash
-git clone git@github.com:obabo0801/Jjing-Web.git
-cd Jjing-Web
-npm ci
-```
-
----
-
-## 🖥 개발 실행
-
-`.env`에 `NODE_ENV=development`를 설정합니다.
-
-최초 빌드
-
-```bash
-npm run build
-```
-
-서버 실행
-
-```bash
-npm start
-```
-
-다른 터미널에서 개발 화면 실행
-
-```bash
-npm run dev
-```
-
-접속 주소: `http://localhost:5173`
-
----
-
-## 🧹 코드 정리
-
-```bash
-npm run format
-```
-
----
-
-## ✅ 코드 검사
-
-| 명령어 | 설명 |
-| :---: | :---: |
-| `npm run lint` | 코드 규칙 검사 |
-| `npm run format:check` | 코드 형식 검사 |
-
----
-
-## 🏗 빌드
-
-운영 환경에서는 `.env`의 `NODE_ENV`를 생략합니다.
-
-```bash
-npm run build
-npm start
-```
-
-빌드 화면 미리보기
-
-```bash
-npm run preview
-```
-
----
-
-## 🔐 .env
-
-`.env`는 공개하지 마세요.
-
-```env
-PORT=3000
-NODE_ENV=development
-MAINTENANCE=false
-COOKIE_SECRET=YOUR_RANDOM_SECRET
-
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=http://localhost:5173/api/04f8996d/google/callback
-
-TTS=
-STT=
-GOOGLE_APPLICATION_CREDENTIALS=
-
-VITE_GIPHY_API_KEY=
-
-VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-VAPID_SUBJECT=mailto:YOUR_EMAIL
-```
-
-### 서버
-
-| 이름 | 설명 |
-| :---: | :---: |
-| `PORT` | 서버 포트 |
-| `NODE_ENV` | 개발 `development`, 기본 `production` |
-| `MAINTENANCE` | `true`이면 점검 활성화 |
-| `COOKIE_SECRET` | 재시작 후에도 유지할 임의의 쿠키 서명 비밀값 |
-
-### 로그인
-
-| 이름 | 설명 |
-| :---: | :---: |
-| `GOOGLE_CLIENT_ID` | OAuth 클라이언트 ID |
-| `GOOGLE_CLIENT_SECRET` | 서버 전용 클라이언트 비밀값 |
-| `GOOGLE_REDIRECT_URI` | 브라우저 접속 주소 기준 콜백 URL |
-
-OAuth 설정에 동일한 콜백 URL을 등록합니다.
-
-여러 주소 설정
-
-```env
-GOOGLE_REDIRECT_URI="http://localhost:5173/api/04f8996d/google/callback
-https://example.com/api/04f8996d/google/callback"
-```
-
-### TTS
-
-| 값 | 처리 방식 |
-| :---: | :---: |
-| 빈 값 | 일반 Google TTS |
-| `login` | 기본 인증 정보를 사용하는 Cloud TTS |
-| `json` | 서비스 계정 파일을 사용하는 Cloud TTS |
-
-### STT
-
-| 값 | 처리 방식 |
-| :---: | :---: |
-| 빈 값 | Cloud STT 비활성화 |
-| `login` | 기본 인증 정보를 사용하는 Cloud STT |
-| `json` | 서비스 계정 파일을 사용하는 Cloud STT |
-
-### Cloud 인증
-
-기본 인증
-
-```bash
-gcloud auth application-default login
-```
-
-서비스 계정 인증
-
-```env
-TTS=json
-STT=json
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-```
-
-인증 파일은 저장소 밖에 보관합니다.
-
-### GIPHY
-
-| 이름 | 설명 |
-| :---: | :---: |
-| `VITE_GIPHY_API_KEY` | 빌드에 포함되는 GIF 검색용 공개 키 |
-
-### Web Push
-
-| 이름 | 설명 |
-| :---: | :---: |
-| `VAPID_PUBLIC_KEY` | 공개 키 |
-| `VAPID_PRIVATE_KEY` | 비밀 키 |
-| `VAPID_SUBJECT` | 운영자 연락처 |
-
-VAPID 키 생성
-
-```bash
-npx web-push generate-vapid-keys
-```
-
----
-
-## 🗃 SQLite
-
-서버 실행 시 `db/index.js`에서 데이터베이스를 준비합니다.
-
-| 경로 | 용도 |
-| :---: | :---: |
-| `data/service.db` | 서비스 데이터 |
-| `data/evidence.db` | 탈퇴 후 신고, 제재 이력 |
-| `data/evidence.key` | 보관 이력 식별 키 |
-| `data/log/` | 날짜별 로그 |
-| `data/upload/users/` | 프로필 이미지 |
-| `data/upload/images/` | 첨부 이미지 |
-| `data/upload/audio/` | 첨부 음성 |
-| `data/tts/` | TTS 음원 |
-| `data/stt/` | STT 처리 파일 |
-
-파일 복사 백업은 서버를 중지한 뒤 `data/` 전체를 보관합니다.
-
----
-
-## 📁 구조
-
-| 경로 | 설명 |
-| :---: | :---: |
-| `config/` | 서버 설정 |
-| `service/` | 서버 기능 |
-| `db/` | 데이터베이스 초기화 |
-| `router/` | API 경로 |
-| `middleware/` | 공통 요청 처리 |
-| `shared/` | 공용 코드 |
-| `src/` | 화면 소스 |
-| `src/js/common/` | 공용 화면 기능 |
-| `locales/` | 다국어 문구 |
-| `public/` | 정적 리소스 |
-| `build/` | 빌드 도구 |
-| `data/` | 실행 데이터 |
-| `dist/` | 빌드 결과 |
-| `server.js` | 서버 실행 |
-
----
-
-## 📬 문의
-
-기타 문의는 아래 연락처로 부탁드립니다.
-
-- **이메일** [obabo0801@gmail.com](mailto:obabo0801@gmail.com)
-- **디스코드** `unjongjjing`
+- **Email** [obabo0801@gmail.com](mailto:obabo0801@gmail.com)
+- **Discord** `unjongjjing`

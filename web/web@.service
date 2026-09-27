@@ -1,0 +1,19 @@
+[Unit]
+StartLimitIntervalSec=0
+Description=oanismajor WEB %i
+After=network-online.target was.service
+Wants=network-online.target
+PartOf=web.service
+
+[Service]
+Type=simple
+ExecStartPre=/usr/sbin/nginx -t -c /etc/oanismajor/web-%i.conf
+ExecStart=/usr/sbin/nginx -c /etc/oanismajor/web-%i.conf -g "daemon off;"
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGQUIT
+TimeoutStopSec=15
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=web.service

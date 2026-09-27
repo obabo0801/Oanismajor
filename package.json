@@ -1,5 +1,5 @@
 {
-  "name": "jjing-web",
+  "name": "oanismajor",
   "version": "1.0.0",
   "type": "module",
   "engines": {
@@ -7,35 +7,38 @@
   },
   "imports": {
     "#package": "./package.json",
-    "#common/*": "./src/js/common/*.js",
-    "#config/*": "./config/*.js",
-    "#shared/*": "./shared/*.js",
-    "#build/*": "./build/*.js",
+    "#common/*": "./web/src/js/common/*.js",
+    "#config/*": "./was/config/*.js",
+    "#shared/*": "./lib/*.js",
+    "#build/*": "./web/build/*.js",
     "#db": "./db/index.js",
     "#db/*": "./db/*.js",
-    "#service/*": "./service/*.js",
-    "#service/log": "./service/log/index.js",
-    "#middleware/*": "./middleware/*.js",
-    "#router/*": "./router/*.js",
-    "#src/*": "./src/js/*.js",
-    "#ui/*": "./src/js/ui/*.js",
-    "#block": "./middleware/block.js",
-    "#maint": "./middleware/maint.js",
-    "#page": "./middleware/page.js",
-    "#assets": "./middleware/static.js",
-    "#upload": "./middleware/upload.js",
-    "#error": "./middleware/error.js",
-    "#router": "./router/index.js",
-    "#audio/*": "./src/assets/audio/*"
+    "#service/*": "./was/service/*.js",
+    "#service/log": "./was/service/log/index.js",
+    "#middleware/*": "./was/middleware/*.js",
+    "#router/*": "./was/router/*.js",
+    "#src/*": "./web/src/js/*.js",
+    "#ui/*": "./web/src/js/ui/*.js",
+    "#block": "./was/middleware/block.js",
+    "#maint": "./was/middleware/maint.js",
+    "#page": "./was/middleware/page.js",
+    "#assets": "./was/middleware/static.js",
+    "#upload": "./was/middleware/upload.js",
+    "#error": "./was/middleware/error.js",
+    "#router": "./was/router/index.js",
+    "#audio/*": "./web/src/assets/audio/*"
   },
   "scripts": {
-    "lint": "eslint .",
-    "format:check": "prettier --check \"**/*.{js,css,html}\"",
-    "format": "eslint . --fix && prettier --write \"**/*.{js,css,html}\"",
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "start": "node server.js"
+    "format": "eslint . --fix && prettier --write \"**/*.{js,css,html,sh}\"",
+    "dev": "node run.js dev",
+    "build": "vite build --config web/vite.config.js",
+    "preview": "vite preview --config web/vite.config.js",
+    "start": "node run.js start",
+    "stop": "node run.js stop",
+    "status": "node run.js status",
+    "logs": "node run.js logs",
+    "setup": "node run.js setup",
+    "restart": "node run.js restart"
   },
   "dependencies": {
     "@google-cloud/speech": "^8.0.1",
@@ -45,9 +48,10 @@
     "express": "^5.2.1",
     "firebase-admin": "^14.3.0",
     "google-auth-library": "^11.0.2",
+    "music-metadata": "^11.16.1",
+    "pg": "^8.23.0",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.4",
-    "sqlite3": "^6.0.1",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
@@ -55,10 +59,10 @@
     "eslint": "^10.9.1",
     "globals": "^17.12.0",
     "prettier": "^3.9.6",
+    "prettier-plugin-sh": "^0.19.0",
     "vite": "^8.2.1"
   },
   "allowScripts": {
-    "protobufjs@7.6.5": true,
-    "sqlite3@6.0.1": true
+    "protobufjs@7.6.6": true
   }
 }

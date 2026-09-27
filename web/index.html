@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title data-i18n="app.title">&#8203;</title>
+
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+
+    <link rel="manifest" href="/manifest.json" />
+
+    <meta name="theme-color" content="#ffffff" />
+
+    <link rel="stylesheet" href="/src/css/style.css" />
+    <link rel="stylesheet" href="/src/css/index.css" />
+  </head>
+
+  <body>
+    <main class="app" hidden>
+      <section class="chatting" data-chatting="stream">
+        <div class="chatting-list"></div>
+
+        <form class="chatting-form" hidden>
+          <div class="input">
+            <textarea
+              class="chatting-input"
+              name="message"
+              rows="1"
+              autocomplete="off"
+              data-control
+              data-i18n-placeholder="chatting.message"
+            ></textarea>
+
+            <div class="input-actions">
+              <button
+                type="button"
+                class="chatting-voice voice"
+                data-icon="voice"
+                data-circle
+                data-tooltip="chatting.voice"
+              ></button>
+
+              <button
+                type="submit"
+                class="chatting-send"
+                data-icon="send"
+                data-circle
+                data-confirm
+                data-tooltip="chatting.send"
+                hidden
+              ></button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <div>
+      <script type="module" src="/src/js/script.js"></script>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+.link-confirm,
+.link-list {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.link-confirm {
+  text-align: start;
+}
+
+.link-confirm > p {
+  margin: 0;
+}
+
+.link-name {
+  font-weight: 700;
+}
+
+.link-address {
+  min-width: 0;
+  direction: ltr;
+  unicode-bidi: isolate;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.link-notice {
+  color: var(--mute);
+  font-size: 0.875rem;
+  white-space: pre-line;
+}
+
+.link-trust.checkbox {
+  width: 100%;
+}
+
+.link-error {
+  color: var(--error);
+}
+
+.link-site {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.link-site > span {
+  flex: 1;
+}
+
+.link-site .link-notice {
+  display: block;
+  margin-block-start: 0.25rem;
+}
+
+.link-site > button {
+  flex: 0 0 auto;
+}
+
+.chatting-text .link {
+  color: var(--focus);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  overflow-wrap: anywhere;
+}
+
+.wearable .link-site {
+  flex-direction: column;
+}
