@@ -25,12 +25,10 @@ export default async function manage(viewer, uid, action, data = {}) {
   let transaction = false;
 
   try {
-    await exec(`
-      BEGIN;
-      SELECT pg_advisory_xact_lock(734106);
-    `);
-
+    await exec("BEGIN;");
     transaction = true;
+
+    await exec("SELECT pg_advisory_xact_lock(734106);");
 
     const actor = await get(
       `

@@ -28,12 +28,8 @@ try {
   const allowed = await access();
 
   if (allowed) {
-    await Promise.all([
-      i18n.translate(),
-      pwa.load().catch(() => null),
-      emoji.load(),
-      settings.load()
-    ]);
+    void pwa.load().catch(() => null);
+    await Promise.all([i18n.translate(), emoji.load(), settings.load()]);
 
     if (url.searchParams.get("popup") !== "1") {
       loading.remove();

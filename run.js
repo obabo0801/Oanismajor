@@ -64,7 +64,7 @@ const execute = (
     }
 
     child.on("error", reject);
-    child.on("exit", (code, signal) => {
+    child.on("close", (code, signal) => {
       if (code === 0 || signal === "SIGINT") resolve(output.trim());
       else
         reject(
