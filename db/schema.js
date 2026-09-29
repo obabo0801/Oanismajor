@@ -101,6 +101,15 @@ export default `
     GENERATED ALWAYS AS (google IS NOT NULL OR soop IS NOT NULL) STORED;
   CREATE UNIQUE INDEX IF NOT EXISTS usersoop ON account.profile (soop);
 
+  CREATE TABLE IF NOT EXISTS account.session (
+    token TEXT PRIMARY KEY,
+    uid TEXT NOT NULL REFERENCES account.profile(uid) ON DELETE CASCADE,
+    expires BIGINT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS sessionuid ON account.session (uid);
+  CREATE INDEX IF NOT EXISTS sessionexpires ON account.session (expires);
+
   CREATE TABLE IF NOT EXISTS account.file (
     rowid BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
     uid TEXT NOT NULL,

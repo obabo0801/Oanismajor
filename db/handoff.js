@@ -3,6 +3,8 @@ import * as path from "node:path";
 import * as crypto from "node:crypto";
 import * as child from "node:child_process";
 import * as storage from "../was/service/storage.js";
+import edit from "#config/edit";
+import * as privilege from "#config/privilege";
 
 const root = path.resolve(import.meta.dirname, "..");
 const read = async (file) => JSON.parse((await fs.readFile(file, "utf8")).replace(/^\uFEFF/, ""));
@@ -196,16 +198,18 @@ const role = async (primary) => {
     settings.cluster.sync = local.cluster.sync;
     await atomic(`${directory}/local.json`, JSON.stringify(settings, null, 2) + "\n");
 
-    let content = await fs.readFile(`${directory}/.env`, "utf8");
+    const content = await fs.readFile(`${directory}/.env`, "utf8");
+    const values = {};
 
     for (const name of ["DATABASE_URL", "REPLICATION_URL"]) {
       const url = new URL(process.env[name]);
 
       url.hostname = host;
       url.port = String(port);
-      content = content.replace(new RegExp(`^${name}=.*$`, "m"), `${name}=${url.href}`);
+      values[name] = url.href.replaceAll("'", "%27").replaceAll('"', "%22");
     }
-    await atomic(`${directory}/.env`, content);
+
+    await atomic(`${directory}/.env`, edit(content, values));
   }
 };
 
@@ -376,6 +380,7 @@ async function operate(action, ticket) {
 
     await role(true);
     await storage.setup(config, execute);
+    if (config.was.length) await privilege.setup(config, execute);
 
     const proof = seal({
       kind: "promoted",
@@ -455,6 +460,8 @@ async function operate(action, ticket) {
     }
 
     await storage.setup(config, execute);
+    if (config.was.length) await privilege.setup(config, execute);
+
     await release();
     await system("start", unit);
     await wait(async () => (await identity()).recovery);

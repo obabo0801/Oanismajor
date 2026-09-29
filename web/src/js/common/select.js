@@ -13,6 +13,7 @@ let current;
 let listening = false;
 
 const source = (element) => dom.query(":scope > select", element);
+const disabled = (option) => !option || option.matches(":disabled");
 
 const menu = (element) => dom.query(":scope > .select-menu", element);
 
@@ -28,7 +29,7 @@ const sync = (element) => {
   }
 
   value.textContent = option?.textContent ?? "";
-  button.disabled = input.disabled;
+  button.disabled = input.matches(":disabled");
 
   if (key) {
     dom.set(value, "data-i18n", key);
@@ -36,15 +37,22 @@ const sync = (element) => {
     dom.remove(value, "data-i18n");
   }
 
-  dom.all(".select-option", menu(element)).forEach((item) => {
-    const selected = Number(item.dataset.index) === input.selectedIndex;
+  const lists = [menu(element), ...(current?.element === element ? [current.content] : [])];
 
-    if (selected) {
-      dom.set(item, "data-selected", "");
-    } else {
-      dom.remove(item, "data-selected");
-    }
-  });
+  lists.filter(Boolean).forEach((list) =>
+    dom.all(".select-option", list).forEach((item) => {
+      const at = Number(item.dataset.index);
+      const selected = at === input.selectedIndex;
+
+      item.disabled = input.matches(":disabled") || disabled(input.options[at]);
+
+      if (selected) {
+        dom.set(item, "data-selected", "");
+      } else {
+        dom.remove(item, "data-selected");
+      }
+    })
+  );
 };
 
 const close = (focus = false) => {
@@ -114,6 +122,8 @@ const fullscreen = async (session) => {
   const { element, list } = session;
   const content = list.cloneNode(true);
 
+  session.content = content;
+
   dom.set(content, "data-fullscreen", "");
   dom.set(content, "data-pan", "");
   dom.all(".select-option", content).forEach((item) => {
@@ -154,7 +164,7 @@ const open = (element, full = false) => {
   const input = source(element);
   const list = menu(element);
 
-  if (!input || input.disabled || !list || pending.has(element)) {
+  if (!input || input.matches(":disabled") || !list || pending.has(element)) {
     return;
   }
 
@@ -221,7 +231,7 @@ function choose(element, index) {
   const input = source(element);
   const option = input?.options[index];
 
-  if (!input || input.disabled || !option || option.disabled) {
+  if (!input || input.matches(":disabled") || disabled(option)) {
     return;
   }
 
@@ -255,7 +265,7 @@ const bind = (element) => {
     item.type = "button";
     item.className = "select-option";
     item.dataset.index = String(index);
-    item.disabled = option.disabled;
+    item.disabled = disabled(option);
     item.textContent = option.textContent;
 
     if (key) {
@@ -317,6 +327,25 @@ export function listen() {
       choose(current.element, Number(option.dataset.index));
     }
   });
+
+  dom.on(
+    document,
+    "reset",
+    (event) => {
+      const form = event.target;
+
+      queueMicrotask(() => {
+        if (event.defaultPrevented || !(form instanceof HTMLFormElement)) return;
+
+        for (const input of form.elements) {
+          const element = input.closest?.(".select");
+
+          if (element && bound.has(input)) sync(element);
+        }
+      });
+    },
+    true
+  );
 
   dom.on(document, "change", (event) => {
     const input = event.target;

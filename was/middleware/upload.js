@@ -1,5 +1,6 @@
 import express from "express";
 import { request } from "node:http";
+import { stat } from "node:fs/promises";
 
 import * as path from "#config/path";
 import { routes } from "#config/media";
@@ -102,6 +103,22 @@ for (const { directory, prefix, legacy } of routes) {
     express.static(path.upload(directory), options)
   );
 }
+
+router.use("/upload/files/cache", async (req, res, next) => {
+  const match = /^\/(?:v[0-9]+\/)?([a-f0-9]{32})\.(?:jpg|mp3|mp4)$/.exec(req.path);
+
+  if (!match || !["GET", "HEAD"].includes(req.method)) return res.sendStatus(404);
+
+  try {
+    await stat(path.upload("files", "original", `${match[1]}.bin`));
+    res.set("Cache-Control", "private, no-store");
+    next();
+  } catch (error) {
+    if (error.code === "ENOENT") return res.sendStatus(404);
+
+    next(error);
+  }
+});
 
 router.use("/upload", express.static(path.upload(), options));
 

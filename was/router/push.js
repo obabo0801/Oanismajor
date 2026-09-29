@@ -2,7 +2,7 @@ import { Router } from "express";
 import { randomBytes } from "node:crypto";
 
 import address from "#config/ip";
-import { enabled, key } from "#service/push";
+import * as push from "#service/push";
 import * as db from "#db";
 import client from "#config/client";
 import uid from "#config/uid";
@@ -89,7 +89,7 @@ router.delete("/devices/:id", async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  if (!enabled) {
+  if (!push.enabled) {
     return res.status(503).end();
   }
 
@@ -107,16 +107,18 @@ router.get("/", async (req, res) => {
       )
     : null;
 
-  res.json({ key, subscribed: Boolean(saved) });
+  res.json({ key: push.key, subscribed: Boolean(saved) });
 });
 
 router.put("/", async (req, res) => {
-  if (!enabled) {
+  if (!push.enabled) {
     return res.status(503).end();
   }
 
   const id = uid(req);
-  const subscription = req.body?.subscription;
+
+  let subscription = req.body?.subscription;
+
   const endpoint = subscription?.endpoint;
   const keys = subscription?.keys;
 
@@ -131,6 +133,8 @@ router.put("/", async (req, res) => {
   if (!id) {
     return res.status(401).end();
   }
+
+  ({ subscription } = await push.destination(subscription));
 
   const info = client(req);
   const result = await run(
@@ -162,11 +166,12 @@ router.put("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  if (!enabled) {
+  if (!push.enabled) {
     return res.status(503).end();
   }
 
-  const subscription = req.body?.subscription;
+  let subscription = req.body?.subscription;
+
   const endpoint = subscription?.endpoint;
   const keys = subscription?.keys;
 
@@ -212,6 +217,8 @@ router.post("/", async (req, res) => {
   if (!user || blocked) {
     return res.status(403).end();
   }
+
+  ({ subscription } = await push.destination(subscription));
 
   const info = client(req);
   const result = await run(

@@ -102,37 +102,82 @@ export async function configure(config, item, execute) {
 }
 
 export async function setup(item, execute) {
+  if (
+    !Number.isInteger(item.version) ||
+    item.version < 1 ||
+    !/^[a-z][a-z0-9-]*$/.test(item.name) ||
+    !Number.isInteger(item.port) ||
+    item.port < 1024 ||
+    item.port > 65535
+  )
+    throw new Error("Invalid replica configuration");
+
   const directory = `/var/lib/postgresql/${item.version}/${item.name}`;
   const configuration = `/etc/postgresql/${item.version}/${item.name}/postgresql.conf`;
+  const journal = `${directory}.joining.json`;
+  const exists = async (file) => {
+    try {
+      const stat = await fs.lstat(file);
 
-  try {
-    await fs.access(configuration);
-    await fs.access(`${directory}/standby.signal`);
-    return;
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  try {
-    await fs.access(configuration);
+      if (stat.isSymbolicLink()) throw new Error("Replica path must not be a symlink");
+      return true;
+    } catch (error) {
+      if (error.code === "ENOENT") return false;
+
+      throw error;
+    }
+  };
+
+  const save = async (value) => {
+    const file = `${journal}.${randomUUID()}.next`;
+    const handle = await fs.open(file, "wx", 0o600);
+
+    try {
+      await handle.writeFile(JSON.stringify(value));
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+    try {
+      await fs.rename(file, journal);
+    } finally {
+      await fs.rm(file, { force: true });
+    }
+  };
+
+  let job = (await exists(journal)) ? JSON.parse(await fs.readFile(journal, "utf8")) : null;
+
+  if (
+    job &&
+    (!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(job.id) ||
+      !["copy", "ready", "registering", "installing"].includes(job.phase))
+  )
+    throw new Error("Unrecognized replica journal; files preserved");
+
+  if (!job && (await exists(configuration))) {
+    if (await exists(`${directory}/standby.signal`)) return;
+
     throw new Error("Existing primary database cannot be replaced with a replica");
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
   }
+
   if (!process.env.REPLICATION_URL)
     throw new Error("REPLICATION_URL is required for a new replica");
-
   const url = new URL(process.env.REPLICATION_URL);
-
-  if (!/^[a-z0-9.-]+$/i.test(url.hostname) || !/^\d+$/.test(url.port || "5432"))
-    throw new Error("Invalid replication address");
-
   const user = decodeURIComponent(url.username);
-
-  if (!/^[a-z][a-z0-9_]*$/.test(user)) throw new Error("Invalid replication user");
-
   const password = decodeURIComponent(url.password);
 
-  if (/[\r\n]/.test(password)) throw new Error("Invalid replication password");
+  if (
+    !/^[a-z0-9.-]+$/i.test(url.hostname) ||
+    !/^[a-z][a-z0-9_]*$/.test(user) ||
+    /[\r\n]/.test(password) ||
+    !password
+  )
+    throw new Error("Invalid replication connection");
+
+  const source = `${url.hostname}:${url.port || "5432"}:${user}`;
+
+  if (job && job.source !== source)
+    throw new Error("Replica source changed; previous job preserved");
 
   const owner = Number(await execute("id", ["-u", "postgres"], true));
   const group = Number(await execute("id", ["-g", "postgres"], true));
@@ -144,50 +189,143 @@ export async function setup(item, execute) {
     `${url.hostname}:${url.port || "5432"}:replication:${user}:${escaped}\n`,
     { mode: 0o600 }
   );
-
   await fs.chmod(passfile, 0o600);
   await fs.chown(passfile, owner, group);
 
-  const staging = `${directory}.joining`;
-
-  await fs.mkdir(staging, { mode: 0o700 });
-  await fs.chown(staging, owner, group);
-
   const connection = `host=${url.hostname} port=${url.port || "5432"} user=${user} passfile=${passfile} sslmode=require connect_timeout=5 application_name=${item.name}`;
 
-  await execute("/usr/sbin/runuser", [
-    "-u",
-    "postgres",
-    "--",
-    `/usr/lib/postgresql/${item.version}/bin/pg_basebackup`,
-    "--dbname",
-    connection,
-    "--pgdata",
-    staging,
-    "--wal-method=stream",
-    "--no-password",
-    "--no-clean",
-    "--write-recovery-conf",
-    "--create-slot",
-    "--slot",
-    `oanismajor${randomUUID().replaceAll("-", "")}`
-  ]);
+  if (!job) {
+    job = { id: randomUUID(), source, phase: "copy" };
+    await save(job);
+  }
 
-  await execute("/usr/bin/pg_createcluster", [
-    String(item.version),
-    item.name,
-    "--port",
-    String(item.port),
-    "--start-conf=manual"
-  ]);
+  const stage = `${directory}.joining-${job.id}`;
+  const slot = `oanismajor${job.id.replaceAll("-", "")}`;
+  const initial = `${directory}.initial-${job.id}`;
 
-  await fs.rename(directory, `${directory}.initial-${Date.now()}`);
-  await fs.rename(staging, directory);
+  if (job.phase === "copy") {
+    // Only this journal's slot is touched. Active or unknown slots are never forced away.
+    try {
+      await execute(
+        "/usr/sbin/runuser",
+        [
+          "-u",
+          "postgres",
+          "--",
+          "psql",
+          "-X",
+          "-q",
+          "--dbname",
+          `${connection} replication=true`,
+          "-v",
+          "ON_ERROR_STOP=1",
+          "-v",
+          "VERBOSITY=sqlstate",
+          "-c",
+          `DROP_REPLICATION_SLOT ${slot}`
+        ],
+        true,
+        { env: { ...process.env, LC_ALL: "C" }, timeout: 15000 }
+      );
+    } catch (error) {
+      if (!/42704|does not exist/.test(error.message)) throw error;
+    }
+
+    if (await exists(stage)) await fs.rm(stage, { recursive: true });
+
+    await fs.mkdir(stage, { mode: 0o700 });
+    await fs.chown(stage, owner, group);
+    await execute("/usr/sbin/runuser", [
+      "-u",
+      "postgres",
+      "--",
+      `/usr/lib/postgresql/${item.version}/bin/pg_basebackup`,
+      "--dbname",
+      connection,
+      "--pgdata",
+      stage,
+      "--wal-method=stream",
+      "--no-password",
+      "--no-clean",
+      "--write-recovery-conf",
+      "--create-slot",
+      "--slot",
+      slot
+    ]);
+
+    await execute("/usr/sbin/runuser", [
+      "-u",
+      "postgres",
+      "--",
+      `/usr/lib/postgresql/${item.version}/bin/pg_verifybackup`,
+      "--ignore=postgresql.auto.conf",
+      "--ignore=standby.signal",
+      stage
+    ]);
+
+    const auto = await fs.readFile(`${stage}/postgresql.auto.conf`, "utf8");
+
+    if (
+      !auto.includes("primary_conninfo") ||
+      !auto.includes(slot) ||
+      !(await exists(`${stage}/standby.signal`))
+    )
+      throw new Error("Replica recovery configuration missing; job preserved");
+
+    job.phase = "ready";
+    await save(job);
+  }
+
+  if (job.phase === "ready") {
+    if (await exists(configuration))
+      throw new Error("Unexpected database configuration; files preserved");
+
+    job.phase = "registering";
+    await save(job);
+  }
+
+  if (job.phase === "registering") {
+    if (!(await exists(configuration))) {
+      await execute("/usr/bin/pg_createcluster", [
+        String(item.version),
+        item.name,
+        "--port",
+        String(item.port),
+        "--start-conf=manual"
+      ]);
+    }
+
+    job.phase = "installing";
+    await save(job);
+  }
+
+  if (await exists(stage)) {
+    const active = await execute(
+      "pg_ctlcluster",
+      [String(item.version), item.name, "status"],
+      true
+    ).then(
+      () => true,
+      () => false
+    );
+
+    if (active) throw new Error("Stop the unfinished replica before resuming installation");
+
+    if (await exists(directory)) {
+      if (await exists(initial)) throw new Error("Replica destination changed; files preserved");
+
+      await fs.rename(directory, initial);
+    }
+
+    await fs.rename(stage, directory);
+  }
 
   const auto = await fs.readFile(`${directory}/postgresql.auto.conf`, "utf8");
 
-  if (!auto.includes("primary_conninfo"))
-    throw new Error("Replication connection was not recorded");
+  if (!auto.includes(slot) || !(await exists(`${directory}/standby.signal`)))
+    throw new Error("Replica installation could not be verified; journal preserved");
+
+  await fs.rm(journal);
 }
 
 export function watch(config, execute) {

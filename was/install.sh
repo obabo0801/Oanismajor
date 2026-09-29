@@ -82,6 +82,9 @@ for folder in sys.argv[1:]:
 if any(configs[0].get(key) != configs[1].get(key) for key in ('was', 'web', 'db', 'https', 'cluster', 'root', 'node')):
     sys.exit('Server configuration changed. Run installation to apply it.')
 PYTHON
+  /usr/bin/flock --nonblock /run/lock/oanismajor-update.lock \
+    /opt/node24/bin/node "$source/was/service/release.js" "$source" "$target"
+  exit $?
 fi
 
 active=()

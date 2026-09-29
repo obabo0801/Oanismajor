@@ -176,6 +176,13 @@ async function setup() {
 
       mount = await storage.setup(config, execute);
     }
+
+    if (config.was.length) {
+      const privilege = await import("#config/privilege");
+
+      await privilege.setup(config, execute);
+    }
+
     for (const name of ["was", "web"]) {
       const template = await fs.readFile(path.join(directory, name, `${name}@.service`), "utf8");
 
@@ -978,7 +985,20 @@ try {
   } else {
     if (process.getuid() !== 0) throw new Error("Run this command with sudo");
 
-    if (directory !== config.root) {
+    if (action === "setup" && process.env.OANISMAJOR_SETUP_LOCK !== "1") {
+      await execute(
+        "/usr/bin/flock",
+        [
+          "--nonblock",
+          "/run/lock/oanismajor-setup.lock",
+          process.execPath,
+          import.meta.filename,
+          ...process.argv.slice(2)
+        ],
+        false,
+        { env: { ...process.env, OANISMAJOR_SETUP_LOCK: "1" } }
+      );
+    } else if (directory !== config.root) {
       await execute(config.node, [`${config.root}/run.js`, ...process.argv.slice(2)], false, {
         cwd: config.root
       });

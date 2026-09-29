@@ -3,6 +3,7 @@ import { Router } from "express";
 import * as config from "#config/google";
 import * as google from "#service/google";
 import * as session from "#service/session";
+import * as ids from "#config/uid";
 import * as db from "#db";
 import address from "#config/ip";
 import client from "#config/client";
@@ -143,8 +144,10 @@ async function guest(req, res) {
 
   const uid = user?.uid || (await session.create(address(req), client(req).lang));
 
-  await session.remember(res, uid, session.anonymous);
-  await session.remember(res, uid);
+  const previous = req.signedCookies?.[session.anonymous];
+
+  await session.remember(res, uid, session.anonymous, previous);
+  await session.remember(res, uid, ids.key, previous);
 }
 
 router.post("/logout", async (req, res) => {
@@ -162,11 +165,10 @@ router.post("/logout", async (req, res) => {
 
   if (!user?.verified) return res.status(204).end();
 
+  await session.revoke(req.signedCookies?.[ids.key]);
   await guest(req, res);
 
-  if (typeof req.body?.session === "string") {
-    events.disconnect(req.uid, req.body.session);
-  }
+  events.disconnect(req.uid);
 
   res.status(204).end();
 });

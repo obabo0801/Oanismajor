@@ -24,7 +24,7 @@ export const sizeAll = async () => {
 };
 
 export const clearCookie = async () => {
-  const response = await api(user, { method: "DELETE" });
+  const response = await api(user, { method: "DELETE", data: {} });
 
   return response.ok;
 };

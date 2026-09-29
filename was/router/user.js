@@ -45,7 +45,12 @@ router.get(usage, (req, res) => {
   res.json({ size });
 });
 
-router.delete("/", (_, res) => {
+router.delete("/", async (req, res) => {
+  if (req.get("sec-fetch-site") === "cross-site" || !req.is("application/json"))
+    return res.status(403).end();
+
+  await session.revoke(req.signedCookies?.[ids.key]);
+  await session.revoke(req.signedCookies?.[session.anonymous]);
   res.clearCookie(ids.key, clear);
   res.clearCookie(session.anonymous, clear);
   res.status(204).end();
@@ -131,13 +136,13 @@ router.post("/", async (req, res) => {
   );
 
   if (kicked) {
-    await session.remember(res, uid);
+    await session.remember(res, uid, ids.key, req.signedCookies?.[ids.key]);
 
     return res.status(403).json(kicked);
   }
 
   if (blocked) {
-    await session.remember(res, uid);
+    await session.remember(res, uid, ids.key, req.signedCookies?.[ids.key]);
 
     const first = await run(
       `
@@ -192,7 +197,7 @@ router.post("/", async (req, res) => {
     );
   }
 
-  await session.remember(res, uid);
+  await session.remember(res, uid, ids.key, req.signedCookies?.[ids.key]);
   res.json({ id: ids.publicId(uid) });
 });
 

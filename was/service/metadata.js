@@ -24,7 +24,7 @@ for (const [address, prefix] of [
 ])
   blocked.addSubnet(address, prefix);
 
-async function read(value, redirects = 0) {
+export async function resolve(value) {
   const url = new URL(value);
 
   if (
@@ -39,6 +39,11 @@ async function read(value, redirects = 0) {
 
   if (!address || addresses.some((item) => blocked.check(item.address)))
     throw new Error("Private URL");
+  return { url, address };
+}
+
+async function read(value, redirects = 0) {
+  const { url, address } = await resolve(value);
   const response = await new Promise((resolve, reject) => {
     const request = (url.protocol === "https:" ? https : http).get(
       url,

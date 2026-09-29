@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import * as db from "#db";
 import * as ids from "#config/uid";
 import { locale } from "#service/locale";
@@ -22,41 +22,59 @@ export const clear = (req, res) => {
   }
 };
 
-export const remember = async (res, uid, key = ids.key) => {
-  if (!uid) return;
-  const user = await db.get(
-    `
-      UPDATE account.profile
-      SET session = COALESCE(session, ?)
-      WHERE uid = ?
-        AND deletion IS NULL
-        AND erased = 0
-      RETURNING session
-    `,
-    [randomBytes(32).toString("base64url"), uid]
-  );
-
-  if (user) res.cookie(key, user.session, cookie);
-
-  return Boolean(user);
-};
+const digest = (value) =>
+  typeof value === "string" && /^v2\.[A-Za-z0-9_-]{43}$/.test(value)
+    ? createHash("sha256").update(value).digest("hex")
+    : "";
 
 export const read = async (value) => {
-  if (typeof value !== "string") return null;
+  const token = digest(value);
 
-  if (/^[A-Za-z0-9_-]{43}$/.test(value))
-    return db.get(
-      `
-        SELECT uid
-        FROM account.profile
-        WHERE session = ?
-          AND deletion IS NULL
-          AND erased = 0
-      `,
-      [value]
-    );
+  if (!token) return null;
 
-  return null;
+  return db.get(
+    `
+      SELECT s.uid, s.expires
+      FROM account.session s
+      JOIN account.profile p ON p.uid = s.uid
+      WHERE s.token = ? AND s.expires > ?
+        AND p.deletion IS NULL AND p.erased = 0
+    `,
+    [token, Date.now()]
+  );
+};
+
+export const revoke = async (value) => {
+  const token = digest(value);
+
+  if (token) await db.run("DELETE FROM account.session WHERE token = ?", [token]);
+};
+
+export const forget = (uid) => db.run("DELETE FROM account.session WHERE uid = ?", [uid]);
+
+export const remember = async (res, uid, key = ids.key, previous = "") => {
+  if (!uid) return false;
+  const saved = await read(previous);
+
+  if (saved?.uid === uid) {
+    res.cookie(key, previous, { ...cookie, maxAge: Math.max(1, saved.expires - Date.now()) });
+    return true;
+  }
+
+  const token = `v2.${randomBytes(32).toString("base64url")}`;
+  const expires = Date.now() + cookie.maxAge;
+  const result = await db.run(
+    `
+      INSERT INTO account.session(token, uid, expires)
+      SELECT ?, uid, ? FROM account.profile
+      WHERE uid = ? AND deletion IS NULL AND erased = 0
+    `,
+    [digest(token), expires, uid]
+  );
+
+  if (result.changes) res.cookie(key, token, cookie);
+
+  return Boolean(result.changes);
 };
 
 export const name = (uid, lang) =>

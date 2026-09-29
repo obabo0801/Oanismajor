@@ -835,6 +835,7 @@ export default function select(field, attach) {
             )
             .map((group) => ({ ...group, type: "ogq" }))
         );
+
       if (response.ok && Array.isArray(data?.groups)) {
         stickers = new Map(
           packs

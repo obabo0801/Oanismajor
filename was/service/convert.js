@@ -4,6 +4,7 @@ import * as os from "node:os";
 import * as files from "#service/file";
 import { randomUUID } from "node:crypto";
 import * as path from "#config/path";
+import { exclusive } from "#db/connect";
 
 export const version = "2";
 
@@ -161,6 +162,41 @@ const cached = async (source, target, original, saved) => {
   }
 };
 
+export async function remove(name, missing = false) {
+  if (!/^[a-f0-9]{32}\.bin$/.test(name))
+    throw Object.assign(new Error("Invalid media"), { status: 400 });
+
+  return exclusive(`media:${name}`, async () => {
+    if (missing && (await read(path.upload("files", "original", name)))) return;
+
+    const root = path.upload("files", "cache");
+    const entries = await path.readdir(root, { withFileTypes: true }).catch((error) => {
+      if (error.code === "ENOENT") return [];
+
+      throw error;
+    });
+
+    const directories = [
+      root,
+      ...entries
+        .filter((item) => item.isDirectory() && /^v[0-9]+$/.test(item.name))
+        .map((item) => path.upload("files", "cache", item.name))
+    ];
+
+    // Remove derivatives first. A failed cleanup leaves the original available for retry.
+    for (const directory of directories) {
+      for (const extension of ["jpg", "mp3", "mp4"]) {
+        const file = `${directory}/${name.slice(0, -4)}.${extension}`;
+
+        await path.rm(file, { force: true });
+        checked.delete(file);
+      }
+    }
+
+    await path.rm(path.upload("files", "original", name), { force: true });
+  });
+}
+
 export default async function convert(name, kind) {
   if (!/^[a-f0-9]{32}\.bin$/.test(name) || !["audio", "video", "cover"].includes(kind))
     throw Object.assign(new Error("Invalid media"), { status: 400 });
@@ -313,8 +349,13 @@ export default async function convert(name, kind) {
             throw Object.assign(new Error("Source changed during conversion"), { status: 503 });
         }
 
-        if (directory) await files.write(temporary, target);
-        else await rename(temporary, target);
+        await exclusive(`media:${name}`, async () => {
+          if (stamp(await stat(source)) !== stamp(original))
+            throw Object.assign(new Error("Source changed during conversion"), { status: 503 });
+
+          if (directory) await files.write(temporary, target);
+          else await rename(temporary, target);
+        });
 
         checked.delete(target);
         tasks.delete(key);

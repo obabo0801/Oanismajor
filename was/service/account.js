@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import * as db from "#db";
+import * as session from "#service/session";
 import connect, { exclusive } from "#db/connect";
 import * as path from "#config/path";
 import * as evidence from "#service/evidence";
@@ -9,6 +10,7 @@ import * as media from "#config/media";
 import * as history from "#service/history";
 import * as rooms from "#service/room";
 import * as attachment from "#service/chatting/attach";
+import * as convert from "#service/convert";
 import { publicId } from "#config/uid";
 
 const temporary = connect("runtime");
@@ -32,6 +34,7 @@ export const request = async (uid) => {
 
   if (!user) return null;
 
+  await session.forget(uid);
   await profile.disconnect(uid);
   events.disconnect(uid);
   await db.run(
@@ -378,7 +381,10 @@ const erase = async (uid) => {
       ]
     );
 
-    if (!shared) await path.rm(path.upload(route.directory, name), { force: true });
+    if (!shared) {
+      if (route.directory === "files/original") await convert.remove(name);
+      else await path.rm(path.upload(route.directory, name), { force: true });
+    }
   }
 
   await db.transaction(async () => {
@@ -668,6 +674,8 @@ export const clean = () =>
         `,
         [Date.now()]
       );
+
+      await db.run("DELETE FROM account.session WHERE expires <= ?", [Date.now()]);
 
       const rows = await db.all(
         `

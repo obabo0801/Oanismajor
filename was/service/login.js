@@ -1,4 +1,5 @@
 import * as db from "#db";
+import * as ids from "#config/uid";
 import * as session from "#service/session";
 import * as deletion from "#service/account";
 import * as events from "#service/events";
@@ -40,6 +41,8 @@ export async function complete(req, res, uid) {
   }
 
   if (!(await session.remember(res, uid))) return "error";
+
+  await session.revoke(req.signedCookies?.[ids.key]);
 
   res.clearCookie(session.recovery, clear);
   events.broadcast("online");

@@ -8,8 +8,13 @@ __MOUNT__
 
 [Service]
 Type=simple
-User=root
-Group=root
+User=oanismajor
+Group=oanismajor
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=__ROOT__/storage
 WorkingDirectory=__ROOT__
 Environment=NODE_ENV=production
 Environment=HOST=__ADDRESS__
