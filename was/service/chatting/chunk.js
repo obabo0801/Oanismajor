@@ -145,7 +145,11 @@ export default async function chunk(user, body, headers) {
   }
   const saved = await read(folder, "result");
 
-  if (saved) return saved;
+  if (saved) {
+    if (saved.expires <= Date.now()) fail(410, "expired");
+
+    return saved;
+  }
 
   if (
     await fs.access(`${folder}/lock`).then(

@@ -123,6 +123,15 @@ export default function select(field, attach) {
   let closing;
   let gesture;
   let animation;
+  let stickers;
+
+  const stored = () =>
+    recent.recent().flatMap((item) => {
+      if (item.type !== "ogq") return [item];
+      const known = stickers?.get(`${item.ogq_id}:${item.number}`);
+
+      return known ? [{ ...known, size: item.size }] : [];
+    });
 
   root.className = "chatting-emotes";
   tabs.className = "segment";
@@ -370,7 +379,7 @@ export default function select(field, attach) {
 
   function render(reset = false) {
     if (!reset) save();
-    const used = new Set(recent.recent().map((item) => item.type));
+    const used = new Set(stored().map((item) => item.type));
     const empty = !types.some(([type]) => used.has(type));
 
     tabs.children[0].disabled = empty;
@@ -446,7 +455,7 @@ export default function select(field, attach) {
     const remote = ["gif", "sticker"].includes(group.type);
     const items =
       group.type === "recent"
-        ? recent.recent().filter((item) => item.type === type)
+        ? stored().filter((item) => item.type === type)
         : choice?.items || group.items;
 
     dom.remove(grid, "data-empty");
@@ -708,9 +717,9 @@ export default function select(field, attach) {
     );
 
     state.head ||= key(groups[index]);
-    tabs.children[0].disabled = !recent
-      .recent()
-      .some((item) => types.some(([type]) => type === item.type));
+    tabs.children[0].disabled = !stored().some((item) =>
+      types.some(([type]) => type === item.type)
+    );
 
     if (index === 0 && tabs.children[0].disabled) {
       index = 1;
@@ -826,9 +835,20 @@ export default function select(field, attach) {
             )
             .map((group) => ({ ...group, type: "ogq" }))
         );
+      if (response.ok && Array.isArray(data?.groups)) {
+        stickers = new Map(
+          packs
+            .filter((group) => group.type === "ogq")
+            .flatMap((group) => group.items)
+            .map((item) => [`${item.ogq_id}:${item.number}`, item])
+        );
+      }
+
       const failed = catalog.unavailable || !response.ok;
 
       if (packs.length || !failed) show(packs);
+
+      if (groups[index]?.type === "recent") render(true);
 
       if (!failed) {
         catalogRetry.reset();

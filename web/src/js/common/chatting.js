@@ -1,18 +1,18 @@
-import * as dom from "./dom.js";
-import * as i18n from "./i18n.js";
-import * as link from "./link.js";
-import * as embed from "./embed.js";
-import editor, { enter, controls } from "./chatting/input.js";
-import * as css from "./css.js";
-import action from "./chatting/action.js";
-import profile from "./chatting/profile.js";
-import * as registry from "./chatting/registry.js";
-import * as clock from "./chatting/time.js";
-import * as events from "./events.js";
-import listen from "./chatting/voice.js";
-import media from "./chatting/media.js";
-import * as assets from "./chatting/asset.js";
-import { notices } from "../../../../lib/chatting.js";
+import * as dom from "#common/dom";
+import * as i18n from "#common/i18n";
+import * as link from "#common/link";
+import * as embed from "#common/embed";
+import editor, { enter, controls } from "#common/chatting/input";
+import * as css from "#common/css";
+import action from "#common/chatting/action";
+import profile from "#common/chatting/profile";
+import * as registry from "#common/chatting/registry";
+import * as clock from "#common/chatting/time";
+import * as events from "#common/events";
+import listen from "#common/chatting/voice";
+import media from "#common/chatting/media";
+import * as assets from "#common/chatting/asset";
+import { notices } from "#shared/chatting";
 
 i18n.preload("chatting.tools.image", "chatting.voice", "chatting.send", "chatting.emoji.clear");
 
@@ -22,7 +22,7 @@ const records = new WeakMap();
 const duration = 30 * 60 * 1000;
 
 const fit = (root) => {
-  if (root.dataset.chatting !== "stream") return;
+  if (dom.get(root, "data-chatting") !== "stream") return;
 
   const unit = Number.parseFloat(getComputedStyle(dom.root).fontSize);
 
@@ -119,7 +119,10 @@ const setup = (root, list, form) => {
 
   dom.on(button, "click", () => {
     root.dispatchEvent(new CustomEvent("chatting-latest"));
-    list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+    list.scrollTo({
+      top: list.scrollHeight,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth"
+    });
   });
 
   dom.on(list, "scroll", () => refresh(list));

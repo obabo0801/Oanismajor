@@ -1,18 +1,18 @@
 import * as storage from "#common/storage";
 import * as settings from "#common/settings";
 import * as context from "#common/chatting/current";
-import { events as path } from "../../../../lib/route.js";
+import { events as path } from "#shared/route";
 
-import * as dom from "./dom.js";
-import device from "./device.js";
-import api from "./api.js";
-import * as registry from "./chatting/registry.js";
-import * as manage from "./chatting/manage.js";
-import * as profile from "./profile.js";
-import * as i18n from "./i18n.js";
-import dialog from "./dialog.js";
-import toast from "./toast.js";
-import { plain } from "../../../../lib/mention.js";
+import * as dom from "#common/dom";
+import device from "#common/device";
+import api from "#common/api";
+import * as registry from "#common/chatting/registry";
+import * as manage from "#common/chatting/manage";
+import * as profile from "#common/profile";
+import * as i18n from "#common/i18n";
+import dialog from "#common/dialog";
+import toast from "#common/toast";
+import { plain } from "#shared/mention";
 
 i18n.preload(
   "chatting.kickTitle",

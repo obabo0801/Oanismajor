@@ -420,6 +420,8 @@ export function open(kind, id) {
     let busy = false;
     let closed = false;
     let last;
+    let synced;
+    let syncing = false;
     let loading = false;
     let heading;
     let attached;
@@ -650,6 +652,7 @@ export function open(kind, id) {
       append(result.data.items.slice().reverse(), !initial, initial);
       if (initial && result.data.items.length) {
         last = result.data.items[0].token;
+        synced ||= last;
         markRead();
       }
 
@@ -931,13 +934,97 @@ export function open(kind, id) {
     };
 
     const sync = async () => {
-      if (room.draft || closed) return;
+      if (room.draft || closed || syncing || document.hidden || navigator.onLine === false) return;
 
-      const result = await api(`${path}/direct/message?id=${id}`);
+      if (!ready) {
+        if (!loading) await load();
 
-      if (!result.ok || closed) return;
+        return;
+      }
 
-      append(result.data.items.slice().reverse());
+      syncing = true;
+
+      const current = id;
+      const previous = last;
+      const boundary = synced;
+      const signal = AbortSignal.timeout(60_000);
+      const items = [];
+      const cursors = new Set();
+
+      let before;
+      let latest;
+      let reached = false;
+
+      try {
+        do {
+          const query = new URLSearchParams({ id: current });
+
+          if (before !== undefined) query.set("before", String(before));
+          const result = await api(`${path}/direct/message?${query}`, {
+            cache: "no-store",
+            signal
+          });
+
+          if (!result.ok || closed || current !== id || document.hidden || signal.aborted) return;
+
+          if (!Array.isArray(result.data?.items)) return;
+          const values = result.data.items;
+
+          latest ||= values[0]?.token;
+          for (const item of values) {
+            if (typeof item?.token !== "string") return;
+
+            if (item.token === boundary) {
+              reached = true;
+              break;
+            }
+
+            items.push(item);
+          }
+
+          if (reached || result.data.next === null) break;
+          const next = Number(result.data.next);
+
+          if (
+            !values.length ||
+            !Number.isSafeInteger(next) ||
+            next <= 0 ||
+            (before !== undefined && next >= before) ||
+            cursors.has(next)
+          )
+            return;
+
+          cursors.add(next);
+          before = next;
+        } while (!closed && !document.hidden && !signal.aborted);
+
+        if (closed || current !== id || document.hidden || signal.aborted) return;
+        const following = chat.bottom(list);
+        const anchor = [...seen.values()].find(
+          (node) => node && node.getBoundingClientRect().bottom > list.getBoundingClientRect().top
+        );
+        const top = anchor?.getBoundingClientRect().top;
+
+        append(items.reverse());
+        for (const item of items) {
+          const node = seen.get(item.token);
+
+          if (node) chat.place(list, node, dom.query(":scope > [data-pending]", list));
+        }
+
+        chat.regroup(list);
+        if (following) list.scrollTop = list.scrollHeight;
+        else if (anchor?.isConnected) list.scrollTop += anchor.getBoundingClientRect().top - top;
+
+        if (latest) {
+          synced = latest;
+          if (last === previous) last = latest;
+        }
+
+        await markRead();
+      } finally {
+        syncing = false;
+      }
     };
 
     const state = dom.on(events(), "direct-state", (event) => {
@@ -956,7 +1043,11 @@ export function open(kind, id) {
       if (data.room === id) sync();
     });
 
-    const connected = dom.on(events(), "ready", refresh);
+    const connected = dom.on(events(), "ready", async () => {
+      await refresh();
+      await sync();
+    });
+    const recovered = dom.on(events(), "sync", sync);
     const changed = dom.on(events(), "profile-update", refresh);
 
     update();
@@ -997,6 +1088,7 @@ export function open(kind, id) {
 
         state();
         connected();
+        recovered();
         changed();
         wheel();
         touch();

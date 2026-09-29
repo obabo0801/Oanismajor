@@ -1,8 +1,8 @@
-import * as dom from "./dom.js";
-import * as audio from "./audio.js";
-import * as storage from "./storage.js";
-import * as tooltip from "./tooltip.js";
-import * as i18n from "./i18n.js";
+import * as dom from "#common/dom";
+import * as audio from "#common/audio";
+import * as storage from "#common/storage";
+import * as tooltip from "#common/tooltip";
+import * as i18n from "#common/i18n";
 
 const playing = new Set();
 const sources = new WeakMap();
@@ -15,12 +15,12 @@ export function spoiler(root, source, value) {
   const url = new URL(source, location.href);
   const key = `${url.origin}${url.pathname}`;
 
-  root.dataset.spoilerSource = key;
+  dom.set(root, "data-spoiler-source", key);
   if (!value) revealed.add(key);
   const targets = value
     ? [root]
     : [...document.querySelectorAll("[data-spoiler-source]")].filter(
-        (element) => element.dataset.spoilerSource === key
+        (element) => dom.get(element, "data-spoiler-source") === key
       );
 
   for (const target of new Set([root, ...targets])) {
