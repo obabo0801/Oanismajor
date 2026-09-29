@@ -11,6 +11,7 @@ import range from "./range.js";
 import * as css from "./css.js";
 import double from "./image/double.js";
 import "../../css/common/video.css";
+import "../../css/common/image/gallery.css";
 
 i18n.preload("video.unavailable", "chatting.attach.reveal");
 
@@ -22,14 +23,16 @@ export function spoiler(root, value) {
 }
 
 const neighbor = (root, offset) => {
-  const scope = root?.closest(".chatting-list");
+  const scope = root?.closest(".chatting-image-group");
 
   if (!scope) return;
   const list = [...scope.querySelectorAll(".video-thumbnail")].filter((item) =>
     item.querySelector(".video-surface")
   );
 
-  return list[list.indexOf(root) + offset];
+  const index = list.indexOf(root);
+
+  return index < 0 ? undefined : list[index + offset];
 };
 
 route.register("video", (source) => {
@@ -184,9 +187,6 @@ export function thumbnail(source, name = "", interactive = true, cover) {
     };
 
     off.push(
-      dom.on(volume, "click", () => {
-        levels.hidden = !levels.hidden;
-      }),
       dom.on(input, "input", () => {
         video.volume = Number(input.value) / 100;
         video.muted = video.volume === 0;
@@ -199,6 +199,7 @@ export function thumbnail(source, name = "", interactive = true, cover) {
     );
 
     loudness();
+    off.push(media.volume(video, volume, levels));
     off.push(
       media.keys(root, (key) => {
         if (["k", " "].includes(key)) icon.click();
@@ -275,18 +276,28 @@ export function thumbnail(source, name = "", interactive = true, cover) {
 
 export default async function view(source, anchor, name = "", position = 0) {
   const root = dom.create("div");
-  const shared = anchor?.querySelector(".video-surface")
+
+  let shared = anchor?.querySelector(".video-surface")
     ? anchor.querySelector("video")
     : media.find(source, "video");
-  const video = shared || dom.create("video");
-  const home = shared?.parentElement;
+  let video = shared || dom.create("video");
+  let home = shared?.parentElement;
 
   let returned = false;
 
   const back = dom.create("button");
   const full = dom.create("button");
+  const previous = dom.create("button");
+  const next = dom.create("button");
   const loading = progress({ type: "circular", value: 25, show: false });
   const off = [];
+  const listeners = [];
+  const listen = (type, run, options) => {
+    const entry = { type, run, options, remove: dom.on(video, type, run, options) };
+
+    listeners.push(entry);
+    return () => entry.remove();
+  };
 
   let close;
   let restore;
@@ -299,7 +310,7 @@ export default async function view(source, anchor, name = "", position = 0) {
 
   for (const event of ["timeupdate", "play", "pause", "volumechange", "ended"])
     off.push(
-      dom.on(video, event, () => {
+      listen(event, () => {
         if (root.isConnected)
           state = {
             time: video.currentTime,
@@ -312,6 +323,7 @@ export default async function view(source, anchor, name = "", position = 0) {
 
   root.className = "video-view";
   root.setAttribute("data-controls", "");
+  dom.set(root, "data-drag", "none");
   if (!shared) video.src = source;
 
   video.playsInline = true;
@@ -333,6 +345,44 @@ export default async function view(source, anchor, name = "", position = 0) {
   full.hidden = !root.requestFullscreen || !document.fullscreenEnabled;
   root.append(back, full, loading.element);
 
+  const navigate = (offset) =>
+    root.dispatchEvent(new CustomEvent("video-step", { detail: offset }));
+
+  const adjacent = () => {
+    const left = Boolean(neighbor(home, -1)?.querySelector("video"));
+    const right = Boolean(neighbor(home, 1)?.querySelector("video"));
+
+    previous.hidden = next.hidden = !left && !right;
+    previous.disabled = !left;
+    next.disabled = !right;
+  };
+
+  for (const [button, key, offset] of [
+    [previous, "previous", -1],
+    [next, "next", 1]
+  ]) {
+    button.type = "button";
+    button.className = `image-view-${key}`;
+    dom.set(button, "data-icon", "arrow");
+    dom.set(button, "data-tooltip", `player.${key}`);
+    dom.set(button, "data-key", offset < 0 ? "J" : "L");
+    for (const key of ["data-circle", "data-blur", "data-response"]) dom.set(button, key, "");
+    if (offset < 0) dom.set(button, "data-angle", "left");
+
+    off.push(dom.on(button, "click", () => navigate(offset)));
+    root.append(button);
+  }
+  adjacent();
+
+  const group = home?.closest(".chatting-image-group");
+
+  if (group) {
+    const observer = new MutationObserver(adjacent);
+
+    observer.observe(group, { childList: true, subtree: true });
+    off.push(() => observer.disconnect());
+  }
+
   const waiting = (value) => {
     loading.element.hidden = !value;
     root.toggleAttribute("data-loading", value);
@@ -352,6 +402,8 @@ export default async function view(source, anchor, name = "", position = 0) {
   let x = 0;
   let y = 0;
   let moved = false;
+  let swipe;
+  let switching = false;
 
   const point = (event) => {
     const box = root.getBoundingClientRect();
@@ -381,16 +433,54 @@ export default async function view(source, anchor, name = "", position = 0) {
     x = center.x + (x - center.x) * ratio;
     y = center.y + (y - center.y) * ratio;
     scale = next;
+    swipe = null;
+    css.set(video, { "--video-slide": null });
     reset();
     render();
   };
-  const gesture = double(video, { scale: () => scale, point, zoom });
-  const release = (event) => points.delete(event.pointerId);
+
+  let gesture = double(video, { scale: () => scale, point, zoom });
+
+  const cancel = () => {
+    const ids = [...points.keys()];
+
+    points.clear();
+    swipe = null;
+    gesture.cancel();
+    reset();
+    root.removeAttribute("data-moving");
+    css.set(video, { "--video-slide": null });
+    for (const id of ids) if (video.hasPointerCapture(id)) video.releasePointerCapture(id);
+  };
+
+  const release = (event) => {
+    if (!points.delete(event.pointerId)) return;
+
+    const start = swipe;
+    const horizontal = start ? event.clientX - start.x : 0;
+    const vertical = start ? Math.abs(event.clientY - start.y) : 0;
+    const minimum = Math.max(24, Math.min(80, root.clientWidth * 0.2));
+    const commit =
+      start?.id === event.pointerId &&
+      event.type === "pointerup" &&
+      !event.defaultPrevented &&
+      !held &&
+      scale <= 1.01 &&
+      Math.abs(horizontal) >= minimum &&
+      Math.abs(horizontal) > vertical * 1.5;
+
+    swipe = null;
+    root.toggleAttribute("data-moving", points.size > 0);
+    css.set(video, { "--video-slide": null });
+    if (commit) {
+      moved = true;
+      navigate(horizontal < 0 ? 1 : -1);
+    }
+  };
 
   off.push(
     () => gesture.destroy(),
-    dom.on(
-      video,
+    listen(
       "wheel",
       (event) => {
         event.preventDefault();
@@ -398,16 +488,27 @@ export default async function view(source, anchor, name = "", position = 0) {
       },
       { passive: false }
     ),
-    dom.on(video, "pointerdown", (event) => {
+    listen("pointerdown", (event) => {
       if (event.button !== 0) return;
 
-      if (!points.size) moved = false;
+      if (!points.size) {
+        moved = false;
+        swipe =
+          scale <= 1.01
+            ? { id: event.pointerId, x: event.clientX, y: event.clientY, axis: null }
+            : null;
+      }
 
       points.set(event.pointerId, point(event));
       video.setPointerCapture(event.pointerId);
-      if (points.size > 1) reset();
+      root.setAttribute("data-moving", "");
+      if (points.size > 1) {
+        swipe = null;
+        css.set(video, { "--video-slide": null });
+        reset();
+      }
     }),
-    dom.on(video, "pointermove", (event) => {
+    listen("pointermove", (event) => {
       const previous = points.get(event.pointerId);
 
       if (!previous) return;
@@ -428,28 +529,73 @@ export default async function view(source, anchor, name = "", position = 0) {
 
         reset();
         render();
+      } else if (swipe?.id === event.pointerId) {
+        const horizontal = event.clientX - swipe.x;
+        const vertical = event.clientY - swipe.y;
+
+        if (!swipe.axis && Math.hypot(horizontal, vertical) > 8) {
+          swipe.axis = Math.abs(horizontal) > Math.abs(vertical) ? "x" : "y";
+          moved = true;
+          reset();
+        }
+
+        if (swipe.axis === "x") {
+          const target = neighbor(home, horizontal < 0 ? 1 : -1)?.querySelector("video");
+
+          css.set(video, { "--video-slide": `${horizontal * (target ? 1 : 0.2)}px` });
+        }
       }
 
       points.set(event.pointerId, current);
     }),
-    ...["pointerup", "pointercancel", "lostpointercapture"].map((event) =>
-      dom.on(video, event, release)
-    ),
-    dom.on(window, "resize", render)
+    ...["pointerup", "pointercancel", "lostpointercapture"].map((event) => listen(event, release)),
+    dom.on(window, "resize", () => {
+      cancel();
+      render();
+    })
   );
 
   off.push(
-    dom.on(root, "video-step", async (event) => {
+    dom.on(root, "video-step", (event) => {
+      if (![-1, 1].includes(event.detail) || !close || returned || switching) return;
       const next = neighbor(home, event.detail);
       const target = next?.querySelector("video");
 
-      if (!target || !close) return;
+      if (!target || !next.isConnected) return;
+      const volume = video.volume;
+      const muted = video.muted;
 
-      video.pause();
-      await close();
-      await view(target.src, next, target.textContent);
+      switching = true;
+      try {
+        cancel();
+        gesture.destroy();
+        listeners.forEach((entry) => entry.remove());
+        video.pause();
+        returner();
+        shared = video = target;
+        home = next;
+        returned = false;
+        scale = 1;
+        x = y = 0;
+        held = false;
+        moved = true;
+        gesture = double(video, { scale: () => scale, point, zoom });
+        for (const entry of listeners)
+          entry.remove = dom.on(video, entry.type, entry.run, entry.options);
+
+        video.volume = volume;
+        video.muted = muted;
+        begin();
+        route.replace("video", ["popover", "video", video.src]);
+      } finally {
+        switching = false;
+      }
     }),
-    dom.on(back, "click", () => close?.()),
+    dom.on(back, "click", async () => {
+      if (document.fullscreenElement === root) await document.exitFullscreen().catch(() => {});
+
+      close?.();
+    }),
     dom.on(full, "click", () => {
       const action = document.fullscreenElement
         ? document.exitFullscreen()
@@ -457,7 +603,7 @@ export default async function view(source, anchor, name = "", position = 0) {
 
       action.catch(() => {});
     }),
-    dom.on(video, "pointerdown", (event) => {
+    listen("pointerdown", (event) => {
       if (event.button !== 0 || video.paused || scale > 1 || points.size > 1) return;
 
       held = false;
@@ -479,9 +625,14 @@ export default async function view(source, anchor, name = "", position = 0) {
     }),
     dom.on(window, "pointerup", reset),
     dom.on(window, "pointercancel", reset),
-    dom.on(window, "blur", reset),
-    dom.on(video, "contextmenu", (event) => event.preventDefault()),
-    dom.on(video, "click", () => {
+    dom.on(window, "blur", cancel),
+    dom.on(document, "fullscreenchange", () => {
+      dom.set(full, "data-icon", document.fullscreenElement === root ? "full-exit" : "full");
+      cancel();
+      render();
+    }),
+    listen("contextmenu", (event) => event.preventDefault()),
+    listen("click", () => {
       if (held || moved) {
         held = false;
         return;
@@ -491,12 +642,12 @@ export default async function view(source, anchor, name = "", position = 0) {
     })
   );
 
-  for (const event of ["waiting", "seeking"]) off.push(dom.on(video, event, () => waiting(true)));
+  for (const event of ["waiting", "seeking"]) off.push(listen(event, () => waiting(true)));
   for (const event of ["playing", "canplay", "seeked", "error", "ended"])
-    off.push(dom.on(video, event, () => waiting(false)));
+    off.push(listen(event, () => waiting(false)));
   waiting(video.readyState < 3 && !video.error);
 
-  const returner = () => {
+  function returner() {
     if (!shared || returned) return;
 
     returned = true;
@@ -504,9 +655,53 @@ export default async function view(source, anchor, name = "", position = 0) {
     css.remove(video);
     player.release(video);
     video.controls = false;
+    home.removeAttribute("data-open");
+    home.toggleAttribute("data-active", !video.paused);
     if (home.isConnected) media.move(video, home, home.firstChild);
     else video.pause();
-  };
+  }
+
+  function begin(initial = false) {
+    if (shared) {
+      if (home.hasAttribute("data-spoiler")) spoiler(home, false);
+
+      if (initial && !home.hasAttribute("data-active")) video.muted = false;
+
+      home.setAttribute("data-active", "");
+      home.setAttribute("data-open", "");
+      media.move(video, root);
+    }
+
+    video.playsInline = true;
+    video.textContent = video.dataset.name || name;
+    video.controls = true;
+    control = player.create(video, Boolean(shared));
+    mount(control);
+    if (!shared && position > 0) video.currentTime = position;
+
+    rate = video.playbackRate;
+    state = {
+      time: video.currentTime,
+      paused: video.paused,
+      volume: video.volume,
+      muted: video.muted
+    };
+
+    render();
+    adjacent();
+    waiting(video.readyState < 3 && !video.error);
+
+    const current = video;
+
+    current
+      .play()
+      .then(() => {
+        if (current === video && !returned) waiting(current.readyState < 3);
+      })
+      .catch(() => {
+        if (current === video && !returned) waiting(false);
+      });
+  }
 
   try {
     await popover({
@@ -517,33 +712,20 @@ export default async function view(source, anchor, name = "", position = 0) {
       closing: returner,
       ready: (_, done) => {
         close = done;
-        if (shared) media.move(video, root);
-
-        if (shared && !home.hasAttribute("data-active")) {
-          video.muted = false;
-          home.setAttribute("data-active", "");
-        }
-
-        video.controls = true;
-        control = player.create(video, Boolean(shared));
-        mount(control);
+        begin(true);
         restore = theme.color(root);
-        if (!shared && position > 0) video.currentTime = position;
-
-        video
-          .play()
-          .then(() => waiting(video.readyState < 3))
-          .catch(() => waiting(false));
       }
     });
 
     return state;
   } finally {
+    cancel();
     returner();
-    reset();
     css.remove(video);
     off.forEach((remove) => remove());
     if (!shared) {
+      returned = true;
+      player.release(video);
       video.pause();
       video.removeAttribute("src");
       video.load();

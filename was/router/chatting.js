@@ -8,7 +8,7 @@ import store from "../service/image.js";
 import audio from "../service/audio.js";
 import maximum from "../../lib/upload.js";
 import * as attachment from "../service/chatting/attach.js";
-import chunk from "../service/chatting/chunk.js";
+import * as chunk from "#service/chatting/chunk";
 import * as rules from "../../lib/attach.js";
 import * as direct from "#service/chatting/direct";
 import * as assets from "#service/chatting/assets";
@@ -262,6 +262,27 @@ router.patch(["/:id/attachment", "/direct/message/:id/attachment"], async (req, 
   res.json(await assets.edit(req.chatUser, req.params.id, req.body));
 });
 
+router.get("/file", async (req, res) => {
+  if (!(await uploads(req.chatUser.uid))) {
+    res.set("Retry-After", "60");
+    return res.status(429).json({ code: "busy" });
+  }
+
+  await chatting.writable(req.chatUser);
+  try {
+    const result = await chunk.status(req.chatUser, req.query.upload);
+
+    if (result.pending) res.set("Retry-After", "2");
+
+    res.status(result.pending ? 202 : 200).json(result);
+  } catch (error) {
+    if (error.status >= 400 && error.status < 500)
+      return res.status(error.status).json({ code: error.code || "invalid" });
+
+    throw error;
+  }
+});
+
 router.get("/:id", async (req, res) => {
   res.json(await chatting.around(req.chatUser, req.params.id));
 });
@@ -336,17 +357,26 @@ router.post(
     if (!req.get("X-File-Name")) return res.status(400).end();
 
     await chatting.writable(req.chatUser);
-    if (req.get("X-Upload-Id"))
-      return res
-        .status(201)
-        .json(
-          await chunk(req.chatUser, req.body, {
-            id: req.get("X-Upload-Id"),
-            offset: req.get("X-Upload-Offset"),
-            size: req.get("X-Upload-Size"),
-            name: req.get("X-File-Name")
-          })
-        );
+    if (req.get("X-Upload-Id")) {
+      try {
+        const result = await chunk.default(req.chatUser, req.body, {
+          id: req.get("X-Upload-Id"),
+          offset: req.get("X-Upload-Offset"),
+          size: req.get("X-Upload-Size"),
+          name: req.get("X-File-Name"),
+          wait: req.get("X-Upload-Wait") === "1"
+        });
+
+        if (result.pending) res.set("Retry-After", "2");
+
+        return res.status(result.pending ? 202 : 201).json(result);
+      } catch (error) {
+        if (error.status >= 400 && error.status < 500)
+          return res.status(error.status).json({ code: error.code || "invalid" });
+
+        throw error;
+      }
+    }
 
     res
       .status(201)

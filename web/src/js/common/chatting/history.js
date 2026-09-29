@@ -307,7 +307,7 @@ export default function history(root, messageId = "", room = {}) {
 
   async function recover() {
     again = true;
-    if (catching || destroyed || halted) return;
+    if (catching || destroyed || halted || document.hidden || navigator.onLine === false) return;
 
     if (!ready) {
       if (!loading) return load(messageId);
@@ -371,6 +371,8 @@ export default function history(root, messageId = "", room = {}) {
     if (!valid(item) || !ready || catching) return recover();
 
     if (item.seq <= cursor) return;
+
+    if (item.seq > cursor + 1) return recover();
 
     if (!access.isAdmin() && (item.blocked || access.isBlocked(item.id))) return recover();
 
@@ -894,6 +896,7 @@ export default function history(root, messageId = "", room = {}) {
         } catch {}
       })
     );
+  off.push(dom.on(source, "sync", recover));
   off.push(dom.on(window, "online", recover));
   off.push(
     dom.on(document, "visibilitychange", () => {

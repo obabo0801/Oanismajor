@@ -189,5 +189,70 @@
 }
 
 :is(.small, .wearable) .assets-preview .group[data-view="grid"] {
-  grid-auto-columns: 5rem;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: min(100%, 7rem);
+  justify-items: stretch;
+  padding-inline: 0.5rem;
+}
+
+:is(.small, .wearable) .chatting-assets .group[data-view="grid"] {
+  justify-items: stretch;
+}
+
+:is(.small, .wearable)
+  .chatting-assets:is([data-kind="file"], [data-kind="link"])
+  .group[data-view="grid"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:is(.small, .wearable) :is(.assets-preview, .chatting-assets) .group-item {
+  align-items: stretch;
+  justify-items: stretch;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+}
+
+:is(.small, .wearable)
+  :is(.assets-preview, .chatting-assets)
+  .group-item
+  > .file-card[data-view="grid"] {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 0.5rem;
+}
+
+:is(.small, .wearable)
+  :is(.assets-preview, .chatting-assets)
+  .group-item
+  > .file-card[data-view="grid"]:not([data-cover]) {
+  height: 100%;
+  min-height: 5rem;
+  padding: 0.5rem;
+  aspect-ratio: auto;
+}
+
+:is(.small, .wearable)
+  :is(.assets-preview, .chatting-assets)
+  .file-card[data-view="grid"]
+  .file-name {
+  display: block;
+  overflow: visible;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+:is(.small, .wearable)
+  :is(.assets-preview, .chatting-assets)
+  .file-card[data-view="grid"]
+  .file-name
+  > span {
+  display: inline;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

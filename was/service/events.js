@@ -40,6 +40,7 @@ const local = () =>
 
         return {
           uid: context.uid,
+          room: context.room || "",
           session: context.session,
           key: context.key,
           active: context.active,
@@ -145,8 +146,8 @@ export const touch = (uid, session, visible, active = true, relay = true) => {
   return false;
 };
 
-export const list = async () => {
-  const connected = records();
+export const list = async (room) => {
+  const connected = records().filter((item) => room === undefined || item.room === room);
   const ids = [...new Set(connected.map((item) => item.uid))];
   const users = new Map();
 

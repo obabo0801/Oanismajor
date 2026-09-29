@@ -147,7 +147,7 @@ export function rename(root, value) {
 
   if (!title) return;
 
-  if (root.dataset.view !== "grid") {
+  if (dom.get(root, "data-view") !== "grid") {
     title.textContent = value;
     return;
   }

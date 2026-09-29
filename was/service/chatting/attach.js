@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { copyFile, constants } from "node:fs/promises";
+import * as files from "#service/file";
 import sharp from "sharp";
 import * as db from "#db";
 import connect from "#db/connect";
@@ -78,14 +78,7 @@ export const upload = async (user, data, type, adjustment, filename) => {
     if (!name || name.length > 255) fail(400);
     const file = `${data.digest || hash(32, data)}.bin`;
 
-    await path.mkdir(path.upload("files", "original"), { recursive: true });
-    try {
-      if (data.file)
-        await copyFile(data.file, path.upload("files", "original", file), constants.COPYFILE_EXCL);
-      else await path.writeFile(path.upload("files", "original", file), data, { flag: "wx" });
-    } catch (error) {
-      if (error.code !== "EEXIST") throw error;
-    }
+    await files.save(data, path.upload("files", "original", file));
     await record(user.uid, `files/original/${file}`);
 
     const title = rules.mime(name).startsWith("audio/")

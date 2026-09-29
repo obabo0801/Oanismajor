@@ -80,6 +80,7 @@ export async function open(target) {
       original = target.matches(".video-thumbnail")
         ? target
         : target.querySelector(".video-thumbnail");
+
       if (!original?.querySelector(".video-surface"))
         original = media
           .find(value.url, "video", options.token || options.url)

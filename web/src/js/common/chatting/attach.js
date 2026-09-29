@@ -136,6 +136,7 @@ export function composer(item, change = () => {}) {
       item.artist = artist.value.trim();
       change();
     });
+
     row.append(artist, actions);
     composer.append(heading, cover.root, row);
   } else {
@@ -573,6 +574,7 @@ export default function attachments(field) {
           "data-cover",
           Boolean(element.poster) || (element.readyState >= 2 && !element.error)
         );
+
       const off = ["loadeddata", "canplay", "seeked", "error"].map((event) =>
         dom.on(element, event, refresh)
       );
@@ -674,10 +676,10 @@ export default function attachments(field) {
         !(
           url.protocol === "https:" ||
           (url.protocol === "blob:" && url.origin === location.origin) ||
-          /^data:image\/(gif|png|jpeg|webp);base64,/i.test(source)
+          /^data:[\w.+-]+\/[\w.+-]+;base64,/i.test(source)
         )
       )
-        throw new Error("Unsupported clipboard image");
+        throw new Error("Unsupported clipboard source");
       const response = await fetch(url, {
         credentials: "omit",
         referrerPolicy: "no-referrer",
@@ -686,8 +688,7 @@ export default function attachments(field) {
       });
       const type = response.headers.get("content-type")?.split(";")[0];
 
-      if (!response.ok || !rules.types.includes(type) || !response.body)
-        throw new Error("Unsupported clipboard image");
+      if (!response.ok || !response.body) throw new Error("Clipboard fetch failed");
       const reader = response.body.getReader();
       const chunks = [];
 
@@ -709,7 +710,13 @@ export default function attachments(field) {
         chunks.push(value);
       }
 
-      add(new Blob(chunks, { type }));
+      const extension = Object.keys(rules.formats).find((key) => rules.formats[key] === type);
+      const name =
+        url.searchParams.get("name") ||
+        (url.protocol === "https:" ? decodeURIComponent(url.pathname.split("/").at(-1)) : "") ||
+        `download${extension ? `.${extension}` : ""}`;
+
+      add(new File(chunks, name, { type: type || "application/octet-stream" }));
     } catch {
       if (!destroyed) toast({ text: "chatting.attach.clipboard", type: "warning" });
     }
@@ -731,21 +738,9 @@ export default function attachments(field) {
           .map((item) => item.getAsFile())
           .filter(Boolean);
 
-    const mime = {
-      gif: "image/gif",
-      png: "image/png",
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-      webp: "image/webp"
-    };
-
-    const files = candidates
-      .map((file) =>
-        file.type
-          ? file
-          : new Blob([file], { type: mime[file.name?.split(".").at(-1)?.toLowerCase()] })
-      )
-      .filter((file) => rules.types.includes(file.type));
+    const files = candidates.map((file) =>
+      file.type ? file : new File([file], file.name, { type: rules.mime(file.name) })
+    );
     const html = data.getData("text/html");
     const template = dom.create("template");
 
@@ -758,9 +753,13 @@ export default function attachments(field) {
     }
 
     if (!files.length) template.innerHTML = html;
-    const sources = [...template.content.querySelectorAll("img[src]")].map((image) =>
-      image.getAttribute("src")
-    );
+    const sources = [
+      ...new Set(
+        [...template.content.querySelectorAll("img[src], audio[src], video[src], source[src]")].map(
+          (element) => element.getAttribute("src")
+        )
+      )
+    ];
 
     if (!files.length && !sources.length && !candidates.length) return;
 
@@ -793,6 +792,13 @@ export default function attachments(field) {
   };
 
   const off = ["paste", "beforeinput", "drop"].map((type) => dom.on(editor, type, paste, true));
+
+  off.push(
+    dom.on(editor, "dragover", (event) => {
+      if (event.dataTransfer?.types.includes("Files")) event.preventDefault();
+    })
+  );
+
   const observer = new MutationObserver(update);
 
   observer.observe(field, { attributes: true, attributeFilter: ["disabled", "readonly"] });

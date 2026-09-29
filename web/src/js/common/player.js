@@ -4,13 +4,12 @@ import range from "./range.js";
 import * as subtitles from "./caption.js";
 import api from "./api.js";
 import * as media from "./media.js";
-import double from "./image/double.js";
-import * as css from "./css.js";
 import popover from "./popover.js";
 import * as route from "./route.js";
 import mount from "./mount.js";
 import { chatting } from "#shared/route";
 import "../../css/common/player.css";
+import "../../css/common/image.css";
 
 const players = new Map();
 const tracks = new Map();
@@ -58,95 +57,6 @@ export const clock = (value) => {
   return `${hours ? `${hours}:` : ""}${String(Math.floor(seconds / 60) % 60).padStart(hours ? 2 : 1, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 };
 
-function pan(image) {
-  const root = image.parentElement;
-  const points = new Map();
-
-  let scale = 1;
-  let x = 0;
-  let y = 0;
-
-  const point = (event) => {
-    const box = root.getBoundingClientRect();
-
-    return {
-      x: event.clientX - box.left - box.width / 2,
-      y: event.clientY - box.top - box.height / 2
-    };
-  };
-
-  const render = () => {
-    const box = root.getBoundingClientRect();
-    const ratio = image.naturalWidth / image.naturalHeight || 1;
-    const width = Math.min(image.clientWidth, image.clientHeight * ratio);
-    const height = Math.min(image.clientHeight, image.clientWidth / ratio);
-    const horizontal = Math.max(0, (width * scale - box.width) / 2);
-    const vertical = Math.max(0, (height * scale - box.height) / 2);
-
-    x = Math.max(-horizontal, Math.min(horizontal, x));
-    y = Math.max(-vertical, Math.min(vertical, y));
-    css.set(image, { "--cover-scale": scale, "--cover-x": `${x}px`, "--cover-y": `${y}px` });
-  };
-
-  const zoom = (value, center) => {
-    const next = Math.max(1, Math.min(4, value));
-    const ratio = next / scale;
-
-    x = center.x + (x - center.x) * ratio;
-    y = center.y + (y - center.y) * ratio;
-    scale = next;
-    render();
-  };
-  const gesture = double(root, { scale: () => scale, point, zoom });
-  const off = [
-    dom.on(
-      root,
-      "wheel",
-      (event) => {
-        event.preventDefault();
-        zoom(scale * Math.exp(-event.deltaY * 0.0015), point(event));
-      },
-      { passive: false }
-    ),
-    dom.on(root, "pointerdown", (event) => {
-      if (event.button !== 0) return;
-
-      points.set(event.pointerId, point(event));
-      root.setPointerCapture(event.pointerId);
-    }),
-    dom.on(root, "pointermove", (event) => {
-      const previous = points.get(event.pointerId);
-
-      if (!previous) return;
-      const current = point(event);
-      const other = [...points.entries()].find(([id]) => id !== event.pointerId)?.[1];
-
-      if (other) {
-        const before = Math.hypot(previous.x - other.x, previous.y - other.y);
-        const after = Math.hypot(current.x - other.x, current.y - other.y);
-
-        if (before > 0) zoom((scale * after) / before, other);
-      } else if (scale > 1) {
-        x += current.x - previous.x;
-        y += current.y - previous.y;
-        render();
-      }
-
-      points.set(event.pointerId, current);
-    }),
-    ...["pointerup", "pointercancel", "lostpointercapture"].map((event) =>
-      dom.on(root, event, (event) => points.delete(event.pointerId))
-    ),
-    dom.on(window, "resize", render)
-  ];
-
-  return () => {
-    gesture.destroy();
-    off.forEach((remove) => remove());
-    css.remove(image);
-  };
-}
-
 export function create(audio, shared = false) {
   if (players.has(audio) || !audio.parentNode) return;
   const root = dom.create("div");
@@ -172,13 +82,7 @@ export function create(audio, shared = false) {
   const wave = dom.create("canvas");
   const session = navigator.mediaSession;
 
-  let gesture;
-
-  off.push(() => gesture?.());
-
   const artwork = (source) => {
-    gesture?.();
-    gesture = null;
     root.querySelector(".player-artwork")?.remove();
     root.toggleAttribute("data-cover", Boolean(source));
     if (!source) return;
@@ -201,7 +105,6 @@ export function create(audio, shared = false) {
       });
 
     root.append(button);
-    if (!interactive) gesture = pan(image);
   };
 
   let metadata;
@@ -355,10 +258,7 @@ export function create(audio, shared = false) {
 
   off.push(
     dom.on(volume, "click", () => {
-      if (levels) {
-        levels.hidden = !levels.hidden;
-        return;
-      }
+      if (levels) return;
 
       if (audio.muted || audio.volume === 0) {
         if (audio.volume === 0) audio.volume = 1;
@@ -371,6 +271,8 @@ export function create(audio, shared = false) {
   );
 
   off.push(dom.on(audio, "volumechange", loudness));
+  if (levels) off.push(media.volume(audio, volume, levels));
+
   audio.before(root);
   if (shared && root.moveBefore && audio.isConnected) root.moveBefore(audio, null);
   else root.append(audio);
@@ -716,6 +618,7 @@ export function create(audio, shared = false) {
       time.textContent = clock(
         !speech ? position() : Math.ceil(Math.max(0, duration - position()))
       );
+
       draw();
     })
   );
@@ -805,32 +708,59 @@ export const release = (audio) => players.get(audio)?.();
 export async function open(item, anchor) {
   const root = dom.create("div");
   const full = dom.create("button");
+  const back = dom.create("button");
+  const off = [];
   const url = address(item.url);
   const state = url ? ["audio", url] : undefined;
 
-  full.type = "button";
-  full.className = "image-view-full";
-  for (const key of ["data-circle", "data-response"]) dom.set(full, key, "");
-  dom.set(full, "data-icon", "full");
+  let close;
+  let restore;
+
+  root.className = "audio-view";
+  dom.set(root, "data-drag", "none");
+
+  for (const [button, icon, name] of [
+    [back, "arrow", "back"],
+    [full, "full", "full"]
+  ]) {
+    button.type = "button";
+    button.className = `image-view-${name}`;
+    dom.set(button, "data-blur", "");
+    dom.set(button, "data-icon", icon);
+    dom.set(button, "data-circle", "");
+    dom.set(button, "data-response", "");
+  }
+
+  dom.set(back, "data-angle", "left");
   dom.set(full, "data-tooltip", "player.full");
   dom.set(full, "data-key", "F");
   full.hidden = !document.fullscreenEnabled || !root.requestFullscreen;
-  dom.on(full, "click", () => {
-    const action = document.fullscreenElement
-      ? document.exitFullscreen()
-      : root.closest("dialog").requestFullscreen();
+  root.append(back, full);
 
-    action.catch(() => {});
-  });
+  off.push(
+    dom.on(back, "click", async () => {
+      if (document.fullscreenElement === root) await document.exitFullscreen().catch(() => {});
 
-  root.append(full);
+      close?.();
+    }),
+    dom.on(full, "click", () => {
+      const action =
+        document.fullscreenElement === root ? document.exitFullscreen() : root.requestFullscreen();
+
+      action.catch(() => {});
+    }),
+    dom.on(document, "fullscreenchange", () => {
+      const active = document.fullscreenElement === root;
+
+      dom.set(full, "data-icon", active ? "full-exit" : "full");
+    })
+  );
 
   const attached = anchor?.matches(".player") ? anchor : anchor?.querySelector(".player");
   const current = media.find(item.url, "audio", item.record?.token || item.record?.url);
   const original = attached || current?.closest(".player");
   const existing = original?.querySelector("audio");
-
-  let restore;
+  const audio = existing || dom.create("audio");
 
   const take = (target) => {
     restore?.();
@@ -858,10 +788,8 @@ export async function open(item, anchor) {
     };
   };
 
-  if (existing) {
-    root.className = "audio-view";
-
-    const remove = dom.on(root, "player-switch", (event) => {
+  off.push(
+    dom.on(root, "player-switch", (event) => {
       const target = tracks.get(event.detail)?.root;
 
       if (!target) return;
@@ -871,61 +799,53 @@ export async function open(item, anchor) {
       const url = address(event.detail.src);
 
       if (url) route.replace("audio", ["popover", "audio", url]);
-    });
+    })
+  );
 
-    try {
-      await popover({
-        anchor,
-        route: state,
-        back: true,
-        title: "",
-        fullscreen: true,
-        content: root,
-        ready: () => take(original),
-        closing: () => {
-          restore?.();
-          restore = null;
-        }
-      });
-    } finally {
-      restore?.();
-      remove();
-    }
-    return;
+  if (!existing) {
+    audio.src = item.url;
+    audio.dataset.channel = item.channel || "media";
+    audio.controls = true;
+    audio.dataset.name = item.title || item.name || "";
+    audio.dataset.artist = item.artist || "";
+    audio.dataset.message = item.record?.token || item.record?.url || "";
+    if (item.size != null) audio.dataset.size = String(item.size);
+
+    if (item.cover !== undefined) audio.dataset.cover = item.cover === false ? "none" : item.cover;
+
+    root.append(audio);
   }
-  const audio = dom.create("audio");
-
-  root.className = "audio-view";
-  audio.src = item.url;
-  audio.dataset.channel = item.channel || "media";
-  audio.controls = true;
-  audio.dataset.name = item.title || item.name || "";
-  audio.dataset.artist = item.artist || "";
-  audio.dataset.message = item.record?.token || item.record?.url || "";
-  if (item.size != null) audio.dataset.size = String(item.size);
-
-  if (item.cover !== undefined) audio.dataset.cover = item.cover === false ? "none" : item.cover;
-
-  root.append(audio);
 
   try {
     await popover({
       anchor,
       route: state,
-      back: true,
       title: "",
       fullscreen: true,
       content: root,
-      ready: () => {
-        const control = create(audio);
+      ready: (_, done) => {
+        close = done;
+        if (existing) take(original);
+        else {
+          const control = create(audio);
 
-        if (control) mount(control);
+          if (control) mount(control);
+        }
+      },
+      closing: () => {
+        restore?.();
+        restore = null;
       }
     });
   } finally {
-    audio.pause();
-    audio.removeAttribute("src");
-    audio.load();
+    restore?.();
+    off.forEach((remove) => remove());
+    if (!existing) {
+      release(audio);
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    }
   }
 }
 

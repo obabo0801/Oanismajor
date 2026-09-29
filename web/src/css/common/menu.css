@@ -8,38 +8,115 @@
 }
 
 .group.chatting-menu[data-view="grid"] {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  --menu-columns: 2;
+  --menu-hidden: 0;
+
+  grid-template-columns: repeat(calc(var(--menu-columns) - var(--menu-hidden)), minmax(0, 1fr));
+  justify-items: stretch;
 }
 
 .group.chatting-menu[data-view="grid"][data-room] {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  --menu-columns: 3;
 }
 
 .group.chatting-menu[data-view="grid"][data-room][data-multiple] {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  --menu-columns: 4;
 }
 
-:is(.small, .wearable) .group.chatting-menu[data-view="grid"][data-room] {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.group.chatting-menu:has(> .group-item:first-child[hidden]) {
+  --menu-hidden: 1;
+}
+
+.group.chatting-menu > .group-item {
+  align-self: stretch;
+  justify-self: stretch;
+  width: 100%;
+  padding: 0;
 }
 
 .group.chatting-menu > .group-item > button {
   flex-direction: column;
+  align-items: center;
   justify-content: center;
-  height: 100%;
-  gap: 8px;
-  padding: 16px 8px;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 3.75rem;
+  gap: 0.5rem;
+  padding: 1rem 0.5rem;
+  border-radius: 0.5rem;
   text-align: center;
   white-space: normal;
   word-break: keep-all;
-  overflow-wrap: normal;
+  overflow-wrap: anywhere;
 }
 
 .chatting-menu .menu-label {
+  width: 100%;
+  min-width: 0;
   line-height: 1.4;
   text-align: center;
+  white-space: normal;
   word-break: keep-all;
-  overflow-wrap: normal;
+  overflow-wrap: anywhere;
+}
+
+:is(.small, .wearable) .settings.chatting-settings {
+  font-size: 1rem;
+}
+
+:root:is(.small, .wearable) .group.chatting-menu[data-view="grid"] {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+  justify-items: stretch;
+  padding: 0.5rem;
+}
+
+:root:is(.small, .wearable) .chatting-menu > .group-item > button {
+  height: auto;
+  min-height: 3.75rem;
+  padding: 0.75rem 0.5rem;
+  border-radius: 0.5rem;
+  aspect-ratio: auto;
+}
+
+:root.wearable .group.chatting-menu[data-view="grid"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:root:is(.small, .wearable) .chatting-settings > .group > .group-item {
+  justify-items: stretch;
+  width: 100%;
+  padding-block: 0;
+}
+
+:root:is(.small, .wearable) .chatting-settings > .group > .group-item > :is(button, .switch) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: 3.75rem;
+  padding: 0.75rem 0.5rem;
+  aspect-ratio: auto;
+  font-size: inherit;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+:root:is(.small, .wearable)
+  .chatting-settings
+  > .group:not([data-view="grid"])
+  > .group-item
+  > button {
+  border-radius: 0;
+}
+
+:is(.small, .wearable) .chatting-settings .group-next {
+  margin-inline-start: 0;
+}
+
+.chatting-settings .label-value:empty {
+  display: none;
 }
 
 .chatting-menu [data-icon="sound"][data-color] > .icon > * {

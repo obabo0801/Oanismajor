@@ -1,6 +1,6 @@
 import * as storage from "#common/storage";
 import * as settings from "#common/settings";
-import * as context from "./chatting/current.js";
+import * as context from "#common/chatting/current";
 import { events as path } from "../../../../lib/route.js";
 
 import * as dom from "./dom.js";
@@ -37,6 +37,7 @@ let initialized = false;
 let paused = false;
 let received = 0;
 let attempted = 0;
+let synced = 0;
 let timer;
 
 const stream = new EventTarget();
@@ -208,20 +209,42 @@ const connect = () => {
       );
     });
   }
+
+  current.addEventListener("error", () => {
+    if (source !== current || stopped || paused) return;
+
+    sync();
+  });
 };
+
+function sync(force = false) {
+  if (stopped || paused || document.hidden || navigator.onLine === false) return;
+  const now = Date.now();
+
+  if (force !== true && now - synced < 30_000) return;
+
+  synced = now;
+  stream.dispatchEvent(new Event("sync"));
+}
 
 function check(force = false) {
   if (stopped || paused || navigator.onLine === false) return;
 
-  if (document.hidden && (navigator.standalone || standalone.matches)) {
-    return;
-  }
+  if (document.hidden && (navigator.standalone || standalone.matches)) return;
+
+  sync(force === true);
 
   const now = Date.now();
 
   if (source && now - attempted < 5000) return;
 
-  if (force || !source || now - received >= 75_000) connect();
+  if (
+    force === true ||
+    !source ||
+    source.readyState === EventSource.CLOSED ||
+    now - received >= 75_000
+  )
+    connect();
 }
 
 export const suspend = () => {
@@ -276,6 +299,15 @@ const restrict = async (event) => {
   if (result === true) location.replace("/");
 };
 
+const wake = () => {
+  if (stopped || document.hidden) return;
+
+  if (paused) resume();
+  else check(true);
+
+  activity(true, false);
+};
+
 const watch = () => {
   dom.on(window, "pagehide", (event) => {
     suspend();
@@ -283,15 +315,12 @@ const watch = () => {
     if (!event.persisted) release?.();
   });
 
-  dom.on(window, "pageshow", (event) => {
-    if (event.persisted) resume();
-  });
-
+  dom.on(window, "pageshow", wake);
   dom.on(document, "freeze", suspend);
-  dom.on(document, "resume", resume);
+  dom.on(document, "resume", wake);
   dom.on(window, "offline", disconnect);
-  dom.on(window, "online", () => check(true));
-  dom.on(window, "focus", () => check(true));
+  dom.on(window, "online", wake);
+  dom.on(window, "focus", wake);
   dom.on(document, "pointerdown", activity, true);
   dom.on(document, "keydown", activity, true);
   dom.on(document, "scroll", activity, true);
@@ -303,12 +332,8 @@ const watch = () => {
       return;
     }
 
-    if (document.visibilityState === "visible") {
-      if (paused) resume();
-      else check(true);
-    }
-
-    activity(true);
+    if (document.visibilityState === "visible") wake();
+    else activity(true, false);
   });
 };
 
@@ -384,6 +409,7 @@ export default function events() {
     const item = data(event);
 
     if (
+      (context.muted && item.room === context.room) ||
       !settings.allows(item.mentioned) ||
       item.own ||
       item.blocked ||

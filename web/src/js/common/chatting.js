@@ -17,7 +17,6 @@ import { notices } from "../../../../lib/chatting.js";
 i18n.preload("chatting.tools.image", "chatting.voice", "chatting.send", "chatting.emoji.clear");
 
 const bound = new WeakSet();
-const groups = new WeakMap();
 const observers = new WeakMap();
 const records = new WeakMap();
 const duration = 30 * 60 * 1000;
@@ -63,22 +62,45 @@ const refresh = (list) => {
   }
 };
 
-const follow = (list, options, current) => {
-  const id = options.id || (options.own ? "own" : "");
+const group = (previous, options, current) => {
+  const id = options.system ? "" : options.own ? "own" : options.id ? `id:${options.id}` : "";
+  const date = clock.day(current);
+  const passed = current - (previous?.start ?? current);
+  const follow = Boolean(
+    id &&
+    previous?.id === id &&
+    previous.date === date &&
+    previous.private === Boolean(options.private) &&
+    previous.peer === options.peer &&
+    passed >= 0 &&
+    passed < duration
+  );
 
-  if (!id) {
-    groups.delete(list);
+  return {
+    id,
+    date,
+    private: Boolean(options.private),
+    peer: options.peer,
+    start: follow ? previous.start : current,
+    follow
+  };
+};
 
-    return false;
+const follow = (list, options, current, existing) => {
+  let previous;
+
+  for (const node of list.children) {
+    if (node === existing) break;
+
+    if (node.hidden) continue;
+
+    const item = records.get(node);
+
+    if (item) previous = group(previous, item.options, item.current);
+    else if (previous && node.matches(".chatting-system, .chatting-new")) previous.id = null;
   }
 
-  const previous = groups.get(list);
-  const passed = current - (previous?.start ?? current);
-  const result = previous?.id === id && passed >= 0 && passed < duration;
-
-  groups.set(list, { id, start: result ? previous.start : current });
-
-  return result;
+  return group(previous, options, current).follow;
 };
 
 const setup = (root, list, form) => {
@@ -130,7 +152,7 @@ export const regroup = (list) => {
 
   for (const node of [...list.children]) {
     if (node.matches(".chatting-system, .chatting-new") && !records.has(node)) {
-      if (previous) previous.id = null;
+      if (previous && !node.hidden) previous.id = null;
       continue;
     }
 
@@ -144,19 +166,11 @@ export const regroup = (list) => {
       continue;
     }
 
-    const date = clock.day(item.current);
+    const current = group(previous, item.options, item.current);
+    const date = current.date;
     const sameDay = previous?.date === date;
-    const follow =
-      !item.options.system &&
-      sameDay &&
-      previous.id === item.options.id &&
-      previous.private === Boolean(item.options.private) &&
-      previous.peer === item.options.peer &&
-      item.current - previous.start >= 0 &&
-      item.current - previous.start < duration;
 
-    if (follow) dom.set(node, "data-follow", "");
-    else dom.remove(node, "data-follow");
+    node.toggleAttribute("data-follow", current.follow);
 
     if (!sameDay) {
       if (!item.separator) {
@@ -173,13 +187,7 @@ export const regroup = (list) => {
       item.separator = null;
     }
 
-    previous = {
-      id: item.options.system ? null : item.options.id,
-      private: Boolean(item.options.private),
-      peer: item.options.peer,
-      date,
-      start: follow ? previous.start : item.current
-    };
+    previous = current;
   }
 
   dom.all(".chatting-date", list).forEach((node) => {
@@ -269,6 +277,7 @@ export const append = (target, options = {}, scroll = true, existing = null) => 
   const mode = dom.get(list.closest(".chatting"), "data-chatting");
 
   message.className = "chatting-message";
+  message.toggleAttribute("data-follow", follow(list, options, current, existing));
   text.className = "chatting-text";
   time.className = "chatting-time";
 
@@ -343,10 +352,6 @@ export const append = (target, options = {}, scroll = true, existing = null) => 
     }
   }
 
-  if (follow(list, options, current)) {
-    dom.set(message, "data-follow", "");
-  }
-
   if (!keep) message.replaceChildren(user, text);
 
   if (time.textContent && !keep) {
@@ -399,7 +404,6 @@ export function system(target, options = {}) {
   list.insertBefore(node, last?.matches(".chatting-page") ? last : null);
   if (options.time) records.set(node, { options, current: clock.stamp(options.time) });
 
-  groups.delete(list);
   if (stick) list.scrollTop = list.scrollHeight;
 
   refresh(list);

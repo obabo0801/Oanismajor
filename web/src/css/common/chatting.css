@@ -327,6 +327,12 @@
   color: var(--white);
   font-size: 0.875rem;
   pointer-events: none;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+:is(.small, .wearable) .chatting-spoiler {
+  font-size: 0.75rem;
 }
 
 .chatting-emote-head > .segment[hidden] {
@@ -935,6 +941,8 @@
 }
 
 .chatting-message {
+  --chatting-avatar: 40px;
+
   min-width: 0;
 }
 
@@ -975,12 +983,13 @@
   min-width: 0;
 }
 
-.chatting-avatar {
+.chatting-profile > .chatting-avatar {
   flex: none;
 
-  width: var(--control-size);
-  min-height: var(--control-size);
-  height: var(--control-size);
+  width: var(--chatting-avatar, 40px);
+  min-width: var(--chatting-avatar, 40px);
+  min-height: var(--chatting-avatar, 40px);
+  height: var(--chatting-avatar, 40px);
   padding: 0;
   border: 0;
 }
@@ -1162,7 +1171,7 @@
   position: relative;
 
   display: grid;
-  grid-template-columns: var(--control-size, 32px) minmax(0, 1fr);
+  grid-template-columns: var(--chatting-avatar, 40px) minmax(0, 1fr);
   grid-template-areas:
     "avatar name"
     "avatar time"
@@ -1217,7 +1226,7 @@
 
 .chatting[data-chatting="stream"] .chatting-text {
   grid-area: text;
-  margin-inline-start: calc(var(--control-size) + 8px);
+  margin-inline-start: calc(var(--chatting-avatar, 40px) + 8px);
 }
 
 .chatting[data-chatting="stream"] .chatting-time {
@@ -1239,7 +1248,7 @@
 }
 
 .chatting[data-chatting="stream"] .chatting-message[data-follow] {
-  grid-template-columns: var(--control-size) minmax(0, 1fr);
+  grid-template-columns: var(--chatting-avatar) minmax(0, 1fr);
   grid-template-areas: "time text";
 
   margin-block-start: -8px;
@@ -1272,9 +1281,7 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 
-  transition:
-    color 160ms ease,
-    opacity 160ms ease;
+  transition: color 160ms ease;
 }
 
 .chatting[data-chatting="stream"] .chatting-message[data-own] .chatting-name {
@@ -1286,7 +1293,7 @@
   anchor-scope: --messenger-text;
 
   display: grid;
-  grid-template-columns: var(--control-size) minmax(0, 1fr);
+  grid-template-columns: var(--chatting-avatar) minmax(0, 1fr);
   grid-template-areas:
     "profile profile"
     ". text"
@@ -1537,7 +1544,7 @@
 }
 
 :root:not(.small):not(.wearable) .chatting[data-chatting="messenger"] .chatting-message[data-own] {
-  grid-template-columns: minmax(0, 1fr) var(--control-size);
+  grid-template-columns: minmax(0, 1fr) var(--chatting-avatar, 40px);
   grid-template-areas:
     "profile profile"
     "text ."
@@ -1717,7 +1724,7 @@
 }
 
 .chatting.chatting-preview[data-chatting] :is(.chatting-message, .chatting-message[data-own]) {
-  grid-template-columns: var(--control-size, 32px) minmax(0, 1fr);
+  grid-template-columns: var(--chatting-avatar, 40px) minmax(0, 1fr);
   grid-template-areas:
     "avatar name"
     "avatar time"
@@ -1756,7 +1763,7 @@
 .chatting.chatting-preview[data-chatting] .chatting-message .chatting-text {
   --mention-color: var(--focus);
 
-  margin-inline-start: calc(var(--control-size) + 8px);
+  margin-inline-start: calc(var(--chatting-avatar, 40px) + 8px);
   text-align: start;
   padding: 0;
   border-radius: 0;

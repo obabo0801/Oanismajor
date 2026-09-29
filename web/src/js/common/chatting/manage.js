@@ -116,6 +116,7 @@ async function edit(message, options, selected) {
     dom.on(check, "change", () => {
       item.spoiler = check.checked;
     });
+
     label.append(name, check);
     row.append(label);
     group.append(row);

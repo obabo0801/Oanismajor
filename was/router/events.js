@@ -67,11 +67,12 @@ router.post("/", async (req, res) => {
 router.get("/list", async (req, res) => {
   res.set({ "Cache-Control": "private, no-store", Vary: "Cookie" });
   try {
-    await viewer(identity(req), address(req), req.app.get("env") === "development");
+    const user = await viewer(identity(req), address(req), req.app.get("env") === "development");
+    const room = req.query.room === undefined ? null : await rooms.read(user, req.query.room);
+    const result = await events.list(room?.id);
+    const current = await viewer(identity(req), address(req), req.app.get("env") === "development");
 
-    const result = await events.list();
-
-    await viewer(identity(req), address(req), req.app.get("env") === "development");
+    if (room) await rooms.read(current, room.id);
 
     res.json(result);
   } catch (error) {

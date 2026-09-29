@@ -294,7 +294,7 @@ export default {
     receiveMessage: "메신저 받기",
     stream: "스트림",
     messenger: "메신저",
-    message: "메시지",
+    message: "채팅 입력 (c)",
     attach: {
       edit: "오디오 편집하기",
       video: "비디오 편집하기",

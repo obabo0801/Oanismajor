@@ -13,6 +13,7 @@ import mount from "#common/mount";
 import toast from "#common/toast";
 import once from "#common/once";
 import * as route from "#common/route";
+import * as context from "#common/chatting/current";
 import { events as path } from "#shared/route";
 
 const opening = once();
@@ -79,8 +80,8 @@ const valid = (items) =>
       ["online", "away"].includes(item.state)
   );
 
-export default function online(anchor) {
-  return opening("online", async () => {
+export default function online(anchor, room = context.room) {
+  return opening(`online:${room || ""}`, async () => {
     const root = dom.create("div");
     const empty = dom.create("p");
     const edge = dom.create("div");
@@ -279,7 +280,11 @@ export default function online(anchor) {
 
             request = new AbortController();
 
-            const result = await api(`${path}/list`, { cache: "no-store", signal: request.signal });
+            const query = new URLSearchParams(room ? { room } : {});
+            const result = await api(`${path}/list${room ? `?${query}` : ""}`, {
+              cache: "no-store",
+              signal: request.signal
+            });
 
             if (!active) return;
 

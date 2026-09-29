@@ -177,13 +177,19 @@ dialog[data-popover][data-fullscreen] > .layer-content:has(> .video-view) {
 }
 
 .player[data-video] > video {
-  transform: translate(var(--video-x, 0px), var(--video-y, 0px)) scale(var(--video-scale, 1));
+  transform: translate(calc(var(--video-x, 0px) + var(--video-slide, 0px)), var(--video-y, 0px))
+    scale(var(--video-scale, 1));
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
   touch-action: none;
+  cursor: grab;
+}
+
+.video-view[data-moving] > .player[data-video] > video {
+  cursor: grabbing;
 }
 
 .player[data-video] > .player-control {
@@ -327,6 +333,13 @@ dialog[data-popover][data-fullscreen] > .layer-content:has(> .video-view) {
   background: var(--background);
   color: var(--text);
   font-size: 0.75rem;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+:is(.small, .wearable) .video-error {
+  font-size: 0.6875rem;
 }
 
 .video-error > [data-icon] {

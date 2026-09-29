@@ -106,6 +106,7 @@ const thumbnail = (item, button) => {
         "data-cover",
         Boolean(element.poster) || (element.readyState >= 2 && !element.error)
       );
+
     const off = ["loadeddata", "canplay", "seeked", "error"].map((event) =>
       dom.on(element, event, update)
     );

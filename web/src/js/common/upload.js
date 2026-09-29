@@ -1,4 +1,61 @@
-import * as context from "./chatting/current.js";
+import * as context from "#common/chatting/current";
+import api from "#common/api";
+
+const wait = (delay, signal) =>
+  new Promise((resolve) => {
+    if (signal?.aborted) return resolve(false);
+    let timer;
+
+    const finish = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", finish);
+      resolve(!signal?.aborted);
+    };
+
+    timer = setTimeout(finish, delay);
+
+    signal?.addEventListener("abort", finish, { once: true });
+  });
+
+async function complete(path, id, options) {
+  const deadline = Date.now() + 20 * 60_000;
+
+  let delay = 2000;
+
+  while (Date.now() < deadline) {
+    if (!(await wait(delay, options.signal))) return { ok: false, status: 0, data: null };
+
+    if (navigator.onLine === false) continue;
+    const result = await api(`${path}?upload=${encodeURIComponent(id)}`, {
+      cache: "no-store",
+      credentials: options.credentials,
+      signal: AbortSignal.any([options.signal, AbortSignal.timeout(15_000)].filter(Boolean))
+    });
+
+    if (options.signal?.aborted) return { ok: false, status: 0, data: null };
+
+    if (result.status === 202 && result.data?.pending === true) {
+      delay = 2000;
+      continue;
+    }
+
+    if (result.ok) {
+      if (result.data?.failed === true)
+        return { ok: false, status: result.data.status, data: { code: result.data.code } };
+
+      if (typeof result.data?.token !== "string")
+        return { ok: false, status: 502, data: { code: "invalid" } };
+
+      return result;
+    }
+
+    if (result.status && result.status < 500 && result.status !== 429) return result;
+
+    delay = result.status === 429 ? 60_000 : Math.min(10_000, delay * 2);
+  }
+
+  return { ok: false, status: 408, data: { code: "timeout" } };
+}
 
 export default async function upload(path, value, options = {}) {
   const file = value instanceof Blob ? value : value?.file;
@@ -24,6 +81,8 @@ export default async function upload(path, value, options = {}) {
 
     for (let offset = 0; offset < file.size; offset += size) {
       for (let attempt = 0; attempt < 3; attempt++) {
+        if (options.signal?.aborted) return { ok: false, status: 0, data: null };
+
         result = await upload(path, file.slice(offset, offset + size), {
           ...options,
           chunk: true,
@@ -31,7 +90,8 @@ export default async function upload(path, value, options = {}) {
             ...options.headers,
             "X-Upload-Id": id,
             "X-Upload-Offset": String(offset),
-            "X-Upload-Size": String(file.size)
+            "X-Upload-Size": String(file.size),
+            "X-Upload-Wait": "1"
           },
           progress: (loaded) => options.progress?.(offset + loaded, file.size)
         });
@@ -39,12 +99,21 @@ export default async function upload(path, value, options = {}) {
         if (
           result.ok ||
           options.signal?.aborted ||
-          (result.status && result.status < 500 && result.status !== 409)
+          (result.status && result.status < 500 && result.status !== 409) ||
+          (result.status === 409 && result.data?.code && result.data.code !== "busy")
         )
           break;
+
+        if (attempt < 2 && !(await wait(1000 * 2 ** attempt, options.signal)))
+          return { ok: false, status: 0, data: null };
       }
+
+      if (result.status === 202 && result.data?.pending === true)
+        return complete(path, id, options);
+
       if (!result.ok) return result;
     }
+
     return result;
   }
 

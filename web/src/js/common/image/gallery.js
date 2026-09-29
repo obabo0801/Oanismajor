@@ -45,6 +45,7 @@ export default function gallery(root, stage, image, options = {}) {
         void move(index + direction);
       })
     );
+
     root.append(button);
   }
 

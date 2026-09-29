@@ -22,11 +22,17 @@ export const log = (...parts) => data("log", ...parts);
 
 export const access = (...parts) => log("access", ...parts);
 
-export const upload = (...parts) => data("upload", ...parts);
+const storage = (...parts) =>
+  path.join(
+    (process.env.NODE_ENV === "development" && process.env.DEVELOPMENT_STORAGE) || data(),
+    ...parts
+  );
 
-export const stt = (...parts) => data("stt", ...parts);
+export const upload = (...parts) => storage("upload", ...parts);
 
-export const tts = (...parts) => data("tts", ...parts);
+export const stt = (...parts) => storage("stt", ...parts);
+
+export const tts = (...parts) => storage("tts", ...parts);
 
 export const locales = (...parts) => root("web", "locales", ...parts);
 

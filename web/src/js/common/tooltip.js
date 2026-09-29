@@ -36,7 +36,7 @@ const content = (element) => {
   return value && shortcut ? `${value} (${shortcut})` : value;
 };
 
-const hide = (element = source) => {
+export const hide = (element = source) => {
   if (element !== source) {
     return;
   }
@@ -52,13 +52,16 @@ const hide = (element = source) => {
 };
 
 const place = () => {
-  if (!source?.isConnected || !tip) {
+  if (!source?.isConnected || source.closest("[hidden]") || !tip) {
     hide();
 
     return;
   }
 
-  const target = source.getBoundingClientRect();
+  const thumb = source.matches(".player-level input")
+    ? source.closest(".range")?.querySelector(".range-thumb")
+    : null;
+  const target = (thumb || source).getBoundingClientRect();
   const width = tip.offsetWidth;
   const height = tip.offsetHeight;
   const viewport = dom.root;
@@ -88,7 +91,7 @@ const place = () => {
 };
 
 const show = (element, text) => {
-  if (!tip || !element.isConnected || element.closest("dialog:not([open])")) return;
+  if (!tip || !element.isConnected || element.closest("[hidden], dialog:not([open])")) return;
 
   element = convert(element);
 

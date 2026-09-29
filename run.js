@@ -865,6 +865,33 @@ async function operate() {
 async function dev() {
   const storage = config.cluster?.storage?.split(":")[0];
   const media = storage && config.was[0] ? `http://${storage}:${config.was[0]}` : "";
+
+  let data = process.env.DATA_DIRECTORY;
+
+  if (!data && storage) {
+    const target = `${config.root}/storage`;
+
+    if (storage !== config.cluster.address) {
+      const args = ["-rn", "-M", target, "-o", "FSTYPE"];
+      const mounted =
+        process.platform === "win32"
+          ? await execute(
+              "wsl",
+              ["-d", config.distribution, "-u", "root", "--", "findmnt", ...args],
+              true
+            )
+          : await execute("findmnt", args, true);
+
+      if (!mounted.trim().startsWith("nfs")) throw new Error("Shared storage is not mounted");
+    }
+
+    data =
+      process.platform === "win32"
+        ? `\\\\wsl.localhost\\${config.distribution}${target.replaceAll("/", "\\")}`
+        : target;
+
+    await fs.access(data, fs.constants.W_OK);
+  }
   const children = [
     spawn(process.execPath, [path.join(directory, "was/server.js")], {
       cwd: directory,
@@ -872,6 +899,7 @@ async function dev() {
       env: {
         ...process.env,
         NODE_ENV: "development",
+        ...(data && { DEVELOPMENT_STORAGE: data }),
         DEVELOPMENT_MEDIA: media,
         HOST: "127.0.0.1",
         PORT: process.env.PORT || "3000"

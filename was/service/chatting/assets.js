@@ -354,6 +354,7 @@ export const list = async (user, query, room = "") => {
           speech,
           ...item
         } = row;
+
         const attached = attachment
           .read(attachments)
           .find((entry) => (entry.file || entry.image) === item.url);

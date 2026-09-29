@@ -1,8 +1,8 @@
 import speech from "@google-cloud/speech";
+import create from "#service/cloud";
 
 const { SpeechClient } = speech.v2;
 const mode = (process.env.STT || "").trim().toLowerCase();
-const key = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
 export const enabled = ["login", "json"].includes(mode);
 
@@ -10,15 +10,16 @@ let client;
 let project;
 
 const connect = () => {
-  if (mode === "json") {
-    if (!key) {
-      throw new Error();
-    }
+  if (!client) {
+    const pending = create(SpeechClient, mode);
 
-    return new SpeechClient({ keyFilename: key });
+    client = pending;
+    void pending.catch(() => {
+      if (client === pending) client = undefined;
+    });
   }
 
-  return new SpeechClient();
+  return client;
 };
 
 export default async function recognize(audio, lang) {
@@ -26,10 +27,11 @@ export default async function recognize(audio, lang) {
     return { text: "", confidence: null };
   }
 
-  client ||= connect();
-  project ||= await client.getProjectId();
+  const target = await connect();
 
-  const [response] = await client.recognize({
+  project ||= await target.getProjectId();
+
+  const [response] = await target.recognize({
     recognizer: `projects/${project}/locations/global/` + "recognizers/_",
     config: {
       autoDecodingConfig: {},

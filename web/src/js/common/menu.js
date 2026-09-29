@@ -33,6 +33,7 @@ import { meter } from "#common/voice/audio";
 import online from "#common/online";
 import * as assets from "#common/chatting/assets";
 import * as direct from "#common/chatting/direct";
+import * as context from "./chatting/current.js";
 import retry from "#common/retry";
 import { version } from "#package";
 import "../../css/common/menu.css";
@@ -1062,7 +1063,7 @@ export function chatSettings(nested = false, roomId = "") {
   return open(
     "menu.chatSettings",
     async (signal) => {
-      const content = node("div", "settings");
+      const content = node("div", "settings chatting-settings");
       const loaded = await settings.load();
       const response = roomId ? await rooms.read(roomId) : null;
 
@@ -1092,8 +1093,9 @@ export function chatSettings(nested = false, roomId = "") {
       const shortcuts = group(...buttons);
       const exit = buttons.at(-1);
       const update = (value) => {
-        const enabled = current ? !current.muted : value.chat;
+        const enabled = current ? !current.muted : !context.muted;
 
+        buttons[0].parentElement.hidden = !value.notification || !value.chat;
         text(dom.query(".menu-label", buttons[0]), enabled ? "direct.mute" : "direct.unmute");
 
         mark(buttons[0], enabled ? "sound" : "volume-mute", true);
@@ -1129,6 +1131,8 @@ export function chatSettings(nested = false, roomId = "") {
       buttons[0].disabled = !loaded;
       exit.disabled = true;
       dom.on(buttons[0], "click", async () => {
+        if (!settings.read().notification || !settings.read().chat) return;
+
         buttons[0].disabled = true;
         try {
           let saved;
@@ -1141,13 +1145,14 @@ export function chatSettings(nested = false, roomId = "") {
 
             saved = result.ok;
             if (saved) current.muted = !current.muted;
-          } else saved = await settings.save("chat", !settings.read().chat);
+          } else {
+            context.mute(!context.muted);
+            saved = true;
+          }
 
           if (saved) {
             caption({
-              key: (current ? !current.muted : settings.read().chat)
-                ? "menu.chatOn"
-                : "menu.chatOff"
+              key: (current ? !current.muted : !context.muted) ? "menu.chatOn" : "menu.chatOff"
             });
 
             sound.play("pop", { channel: "system" });
@@ -1160,7 +1165,7 @@ export function chatSettings(nested = false, roomId = "") {
       });
 
       dom.on(buttons[1], "click", () =>
-        roomId ? rooms.participants(roomId, buttons[1]) : online(buttons[1])
+        roomId ? rooms.participants(roomId, buttons[1]) : online(buttons[1], context.room)
       );
 
       if (roomId) dom.on(buttons[2], "click", () => rooms.select(roomId));

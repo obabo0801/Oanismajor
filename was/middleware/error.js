@@ -13,17 +13,21 @@ export default function error(error, req, res, next) {
     return reject(req, res);
   }
 
-  if (error?.code === "ENOENT") {
-    return res.status(503).end();
-  }
+  const missing = error?.code === "ENOENT";
 
-  if (error?.code !== "55P03" && !database.unavailable(error)) {
+  if (!missing && error?.status !== 503 && error?.code !== "55P03" && !database.unavailable(error))
     return next(error);
-  }
+
+  console.warn("Service unavailable", {
+    method: req.method,
+    path: req.path,
+    code: error?.code || "UNAVAILABLE",
+    reason: error?.message || "Service unavailable"
+  });
 
   res.set({ "Cache-Control": "no-store", "Retry-After": "3" });
 
-  if (!page(req)) {
+  if (missing || !page(req)) {
     return res.status(503).end();
   }
 

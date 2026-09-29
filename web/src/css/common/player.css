@@ -17,17 +17,41 @@
   display: none;
 }
 
-dialog[data-fullscreen] > .layer-content:has(> .audio-view) {
-  flex: 1;
-  min-height: 0;
+dialog[data-popover][data-fullscreen]:has(> .layer-content > .audio-view) {
+  padding: 0;
+  border: 0;
+  background: var(--background);
+}
+
+dialog[data-fullscreen]:has(> .layer-content > .audio-view) > .layer-head {
+  display: none;
+}
+
+dialog[data-popover][data-fullscreen] > .layer-content:has(> .audio-view) {
+  flex: 1 1 auto;
   display: flex;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 .audio-view {
+  position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  box-sizing: border-box;
   width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
+  padding-block-start: max(4.5rem, env(safe-area-inset-top));
+  padding-block-end: env(safe-area-inset-bottom, 0px);
+  overflow: hidden;
+  background: var(--background);
+  color: var(--text);
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .player.admin-preview {
@@ -219,8 +243,12 @@ dialog[data-fullscreen] > .layer-content:has(> .audio-view) {
 
   grid-template-rows: minmax(0, 1fr) auto auto;
   width: min(100%, 40rem);
+  height: 100%;
   min-height: 0;
   justify-self: center;
+  overflow: auto;
+  border-radius: 0;
+  background: transparent;
 }
 
 .audio-view .player-artwork {
@@ -231,9 +259,7 @@ dialog[data-fullscreen] > .layer-content:has(> .audio-view) {
   max-height: 100%;
   margin: 0;
   overflow: hidden;
-  touch-action: none;
   background: transparent;
-  cursor: grab;
 }
 
 .audio-view .player-cover {
@@ -242,7 +268,6 @@ dialog[data-fullscreen] > .layer-content:has(> .audio-view) {
   min-height: 0;
   max-height: 100%;
   border-radius: 0;
-  transform: translate(var(--cover-x, 0), var(--cover-y, 0)) scale(var(--cover-scale, 1));
   pointer-events: none;
 }
 
@@ -369,13 +394,9 @@ dialog[data-fullscreen] > .layer-content:has(> .audio-view) {
   inset-inline-end: 0.5rem;
 }
 
-.compact dialog[data-fullscreen]:has(.audio-view) > .layer-head {
-  display: none;
-}
-
 .compact dialog[data-fullscreen] > .layer-content:has(> .audio-view) {
   padding: 0;
-  overflow: auto;
+  overflow: hidden;
   font-size: 1rem;
   line-height: 1.25;
 }

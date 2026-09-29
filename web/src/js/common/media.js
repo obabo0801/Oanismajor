@@ -9,6 +9,7 @@ const sources = new WeakMap();
 const gains = new Map();
 const shortcuts = new Map();
 const revealed = new Set();
+const covers = new Set();
 
 export function spoiler(root, source, value) {
   const url = new URL(source, location.href);
@@ -99,6 +100,57 @@ dom.on(document, "keydown", (event) => {
   if (root && shortcuts.get(root)(key) !== false) event.preventDefault();
 });
 
+export function volume(element, button, levels) {
+  const input = levels.querySelector("input");
+  const key = dom.get(button, "data-tooltip") || "player.volume";
+  const text = () => `${element.muted ? 0 : Math.round(element.volume * 100)}%`;
+  const show = () => {
+    dom.set(input, "data-tooltip", text());
+    if (!levels.hidden) tooltip.flash(input, text());
+  };
+
+  const close = () => {
+    levels.hidden = true;
+    tooltip.hide(input);
+    dom.set(button, "data-tooltip", key);
+    dom.set(button, "aria-expanded", "false");
+  };
+
+  const outside = (event) => {
+    if (!levels.hidden && !levels.contains(event.target) && !button.contains(event.target)) close();
+  };
+
+  const off = [
+    dom.on(button, "click", () => {
+      if (!levels.hidden) return close();
+
+      levels.hidden = false;
+      tooltip.hide(button);
+      dom.remove(button, "data-tooltip");
+      dom.set(button, "aria-expanded", "true");
+      show();
+    }),
+    dom.on(button, "pointerover", (event) => {
+      if (event.pointerType === "mouse" && !button.contains(event.relatedTarget)) show();
+    }),
+    dom.on(button, "focus", show),
+    dom.on(levels, "input", show),
+    dom.on(element, "volumechange", show),
+    dom.on(document, "pointerdown", outside, true),
+    dom.on(document, "focusin", outside),
+    dom.on(window, "blur", close)
+  ];
+
+  dom.set(button, "aria-expanded", "false");
+  dom.set(input, "data-tooltip", text());
+  return () => {
+    off.forEach((remove) => remove());
+    close();
+    dom.remove(button, "aria-expanded");
+    dom.remove(input, "data-tooltip");
+  };
+}
+
 export function command(element, key) {
   if (key === "m") {
     const muted = !element.muted && element.volume > 0;
@@ -128,7 +180,9 @@ export function command(element, key) {
     const button = root?.querySelector(".player-volume") || root?.querySelector(".player-control");
     const value = element.muted ? 0 : Math.round(element.volume * 100);
 
-    tooltip.flash(button, `${value}%`);
+    const input = root?.querySelector(".player-level:not([hidden]) input");
+
+    tooltip.flash(input || button, `${value}%`);
   }
   return true;
 }
@@ -219,6 +273,8 @@ export async function resolve(value, kind, signal) {
   )
     return;
 
+  if (kind === "cover" && covers.has(source.pathname)) return;
+
   source.searchParams.delete("play");
   source.searchParams.set("convert", kind);
   try {
@@ -232,10 +288,23 @@ export async function resolve(value, kind, signal) {
           return;
         }
 
-        if (!(await response.json()).ready) return;
+        const result = await response.json();
+
+        if (!result.ready) {
+          if (kind === "cover" && result.empty === true) {
+            covers.add(source.pathname);
+            if (covers.size > 256) covers.delete(covers.values().next().value);
+          }
+          return;
+        }
 
         source.searchParams.delete("convert");
         source.searchParams.set("play", kind);
+        if (kind === "video") {
+          if (typeof result.version !== "string" || !result.version) return;
+
+          source.searchParams.set("v", result.version);
+        }
         return source.href;
       }
 
@@ -269,6 +338,11 @@ export default function media(element) {
     if (attempted || ![3, 4].includes(element.error?.code)) return;
 
     attempted = true;
+
+    const position = Number.isFinite(element.currentTime) ? element.currentTime : 0;
+    const active = !element.paused;
+    const rate = element.playbackRate;
+
     element.setAttribute("data-converting", "");
     element.dispatchEvent(new Event("conversion"));
 
@@ -279,6 +353,22 @@ export default function media(element) {
     );
 
     if (source && !controller.signal.aborted) {
+      const restore = () => {
+        if (controller.signal.aborted || element.src !== source) return;
+
+        if (Number.isFinite(element.duration) && element.duration > 0)
+          element.currentTime = Math.min(position, Math.max(0, element.duration - 0.01));
+
+        element.playbackRate = rate;
+        if (active && ![...playing].some((other) => other !== element && !other.paused))
+          element.play().catch(() => {});
+      };
+
+      element.addEventListener("loadedmetadata", restore, {
+        once: true,
+        signal: controller.signal
+      });
+
       element.src = source;
       element.load();
     }

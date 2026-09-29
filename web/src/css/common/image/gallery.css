@@ -7,7 +7,7 @@
   pointer-events: none;
 }
 
-.image-view > :is(.image-view-previous, .image-view-next) {
+:is(.image-view, .video-view) > :is(.image-view-previous, .image-view-next) {
   --control-size: 2.5rem;
   position: absolute;
   top: 50%;

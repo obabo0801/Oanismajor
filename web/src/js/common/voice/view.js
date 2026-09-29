@@ -1,6 +1,5 @@
 import * as dom from "#common/dom";
 import * as i18n from "#common/i18n";
-import caption from "#common/caption";
 
 const views = new WeakMap();
 const isControl = (target) =>
@@ -23,14 +22,7 @@ export const status = (target, name) => {
 };
 
 export const preview = (target, text) => {
-  const view = views.get(surface(target));
-  const original = view?.original;
-
-  if (view && view.text !== text) {
-    view.caption?.close(false);
-    view.text = text;
-    view.caption = text.trim() ? caption({ text, duration: 0 }) : null;
-  }
+  const original = views.get(surface(target))?.original;
 
   if (!original || !isControl(target) || target.disabled) return;
 
@@ -76,7 +68,6 @@ const display = (target) => {
     }
 
     views.delete(element);
-    view.caption?.close();
     dom.set(action, "data-icon", "voice");
     dom.remove(element, "data-voice");
 

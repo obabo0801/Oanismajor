@@ -151,6 +151,7 @@
 .header-actions > button,
 .footer > button {
   position: relative;
+  background-color: var(--canvas);
 
   flex: none;
   width: var(--control-size);
@@ -196,7 +197,7 @@
 }
 
 .header-actions > .avatar[data-icon="login"]:not([data-blur]) {
-  background-color: var(--background);
+  background-color: var(--canvas);
 }
 
 .header-actions > .avatar[data-blur] .avatar-image,

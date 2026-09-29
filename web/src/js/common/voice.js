@@ -2,7 +2,6 @@ import * as dom from "#common/dom";
 import * as i18n from "#common/i18n";
 import device from "#common/device";
 import sound from "#common/sound";
-import caption from "#common/caption";
 
 import * as server from "#common/voice/server";
 import * as audio from "#common/voice/audio";
@@ -218,7 +217,6 @@ export default async function voice(keywords, options = {}) {
     }
 
     sound.play("success");
-    caption({ text: result.text, duration: 4000 });
 
     return complete({
       action: !words.length || result.confidence >= 0.8 ? "run" : "ask",

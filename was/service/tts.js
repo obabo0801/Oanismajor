@@ -2,12 +2,12 @@ import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 
 import string from "#shared/string";
 import cache, { find } from "#service/tts/cache";
+import create from "#service/cloud";
 
 const host = "https://translate.google.com";
 const timeout = 5000;
 const regions = { en: "en-US", ja: "ja-JP", ko: "ko-KR" };
 const mode = (process.env.TTS || "").trim().toLowerCase();
-const key = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 const enabled = ["login", "json"].includes(mode);
 
 let client;
@@ -76,15 +76,16 @@ const parts = (text) => {
 };
 
 const connect = () => {
-  if (mode === "json") {
-    if (!key) {
-      throw new Error();
-    }
+  if (!client) {
+    const pending = create(TextToSpeechClient, mode);
 
-    return new TextToSpeechClient({ keyFilename: key });
+    client = pending;
+    void pending.catch(() => {
+      if (client === pending) client = undefined;
+    });
   }
 
-  return new TextToSpeechClient();
+  return client;
 };
 
 export const voices = async (lang) => {
@@ -95,9 +96,9 @@ export const voices = async (lang) => {
 
   if (saved && saved.expires > Date.now()) return saved.value;
 
-  client ||= connect();
-
-  const value = within(client.listVoices({ languageCode: code }, { timeout }))
+  const value = within(
+    connect().then((target) => target.listVoices({ languageCode: code }, { timeout }))
+  )
     .then(([result]) =>
       (result.voices || [])
         .filter((voice) => voice.name)
@@ -119,11 +120,10 @@ export const voices = async (lang) => {
 };
 
 const cloud = async (value) => {
-  client ||= connect();
-  await within(client.initialize());
+  const target = await within(connect());
 
   const chirp = value.voice?.includes("-Chirp3-HD-");
-  const [response] = await client.synthesizeSpeech(
+  const [response] = await target.synthesizeSpeech(
     {
       input: { text: value.text },
       voice: { languageCode: value.lang, ...(value.voice && { name: value.voice }) },
@@ -207,9 +207,7 @@ export default async function synthesize(value, options) {
         throw error;
       }
 
-      try {
-        await client?.close();
-      } catch {}
+      if (client) void client.then((target) => target.close()).catch(() => {});
 
       client = undefined;
       retry = Date.now() + 60_000;
